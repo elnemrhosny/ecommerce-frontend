@@ -15,6 +15,9 @@ export function useLogin( ){
         mutationFn : (user) => API.post('/users/login' , user).then(res => res.data),
         onSuccess : (data) =>{
             queryClient.invalidateQueries({queryKey : ['cart']});
+            queryClient.invalidateQueries({queryKey : ['wishlist']});
+            queryClient.invalidateQueries({queryKey : ['wishlistcount']});
+            queryClient.invalidateQueries({queryKey : ['orders']});
             queryClient.setQueryData(['user'] , data);
         }
     });

@@ -68,7 +68,7 @@ function App() {
               <Route path="/profile" element = {<UserProfile/>}/>
               <Route path="/wishlist" element = {<WishlistPage/>}/>
               <Route path = "/orders" element = {<OrdersPage/>} />
-              <Route path="order-success" element = {<OrderSuccessPage/>}/>
+              <Route path="/order-success" element = {<OrderSuccessPage/>}/>
               <Route path="/verify-email" element = {<VerifyEmailPage/>} />
             </Routes>
             <Footer/>

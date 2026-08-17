@@ -16,7 +16,6 @@ export default function CartPage() {
   const {mutate : deleteItem , isPending : isDeletePending , isError : isDeleteError , error : deleteError , isSuccess : isDeleteSuccess , reset : deleteReset} = useDeleteItemCart();
   const {mutate : submitOrder ,  isError : checkoutError , isSuccess : checkoutSuccess} = useSubmitOrder();
   const [error , setError] = useState(false);
-console.log(user)
   const handleCheckout = async () => {
       if(!user){
         setError('You have to be logged in to submit order');
@@ -29,7 +28,8 @@ console.log(user)
     try {
       submitOrder({} , {
         onSuccess : data => {
-          window.location.href = data.url;
+          console.log(data)
+          window.location.href = data.redirectUrl;
         } , 
         onError : (err) => setError(err.response.data)
       });

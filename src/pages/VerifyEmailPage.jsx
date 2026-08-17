@@ -9,6 +9,7 @@ export default function VerifyEmailPage() {
   const token = searchParams.get('token');
   const {mutate : verifyToken , isPending : isLoading , isSuccess , isError} = useVerifyEmailToken();
   const [message, setMessage] = useState('');
+  
 
  useEffect(()=>{
     verifyToken({token});
