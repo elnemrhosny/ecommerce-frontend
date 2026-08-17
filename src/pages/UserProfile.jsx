@@ -120,7 +120,7 @@ export default function UserProfile() {
           </svg>
           Change Name
         </button>
-        <button
+        {user.auth_provider === 'google' ? '' :  <button
           onClick={() => setShowPasswordModal(true)}
           className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition dark:bg-indigo-500 dark:hover:bg-indigo-600"
         >
@@ -128,7 +128,7 @@ export default function UserProfile() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           </svg>
           Change Password
-        </button>
+        </button>}
       </div>
     </div>
 
