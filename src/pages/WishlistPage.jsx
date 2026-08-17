@@ -14,8 +14,8 @@ export default function WishlistPage() {
   const {data : data , isLoading , isError} = useWishlist(offset , 12);
   const {mutate : deleteWishlist} = useDeleteWishlist();
   const [page, setPage] = useState(1);
-  const products = data?.wishlist;
-  const count = data?.count;
+  const products = data?.wishlist || [];
+  const count = data?.count || 0;
   const totalPages = Math.ceil(count / 12);
 
   const handlePrev = () => {
@@ -42,7 +42,7 @@ export default function WishlistPage() {
         <Spinner />
       ) : isError ? (
         <div className="text-center py-16 text-red-500 dark:text-red-400">Something went wrong</div>
-      ) : products.length === 0 ? (
+      ) : products?.length === 0 ? (
         <div className="text-center py-16 text-gray-500 dark:text-gray-400">
           Your wishlist is empty.
         </div>
