@@ -15,14 +15,14 @@ import { useAddWishlist , useDeleteWishlist } from '../hooks/useUser';
 export default function ProductPage() {
   const {user} = useAuth();
   const {id} = useParams();
-  const {data : product , isLoading : isProductLoading , isError : isProductError}= useProducts(`product_id=${id}`);
+  const {data  = {}  , isLoading : isProductLoading , isError : isProductError}= useProducts(`product_id=${id}`);
   const { mutate: addWishlist } = useAddWishlist();
   const { mutate: deleteWishlist } = useDeleteWishlist();
   const [wishlistError, setWishlistError] = useState(false);
   const {mutate : handleCartAdd , isPending : isCartAddLoading, isSuccess : isCartAddSuccess , isError : isCartAddError , reset : cartAddReset} = useAddCart();
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-
+  const product = data?.product;
   
 
   if (isProductLoading) {
@@ -53,7 +53,7 @@ export default function ProductPage() {
   
 
   const allImages =
-    product.images?.length > 0 ? product.images : [];
+    data.images?.length > 0 ? data.images : [];
 
   const openLightbox = (index) => {
     setLightboxIndex(index);
