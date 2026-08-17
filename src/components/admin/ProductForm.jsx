@@ -4,7 +4,7 @@ import { validateProduct } from "../../functions/products";
 import ErrorModal from "../ErrorModal";
 import ConfirmModal from "../ConfirmModal";
 
-export default function ProductForm({ product, onClose, onSave , categories}) {
+export default function ProductForm({ product, onClose, onSave , categories , images}) {
   const isNew = !product;
   const fileInputRef = useRef(null);
   const prevProductIdRef = useRef(null);
@@ -14,7 +14,7 @@ export default function ProductForm({ product, onClose, onSave , categories}) {
     name: "",
     category_id: "",
     description: "",
-    price: "",
+    price: "", 
     stock: 0,
     is_active: true,
   });
@@ -47,7 +47,7 @@ export default function ProductForm({ product, onClose, onSave , categories}) {
           is_active: product.is_active !== undefined ? product.is_active : true,
         });
         setExistingImages(
-          product.images?.map((img) => ({
+          images?.map((img) => ({
             image_id: img.image_id,
             image_url: img.image_url,
           })) || []

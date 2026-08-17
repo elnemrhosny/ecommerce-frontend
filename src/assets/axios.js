@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-    baseURL : "https://ecommerce-backend-seven-wine.vercel.app" , 
+    baseURL : import.meta.env.VITE_SERVER_URL , 
     timeout : 10000 , 
     headers : {
         'Content-Type' : 'application/json' ,

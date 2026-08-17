@@ -20,7 +20,7 @@ export default function AdminProducts() {
   const {mutate : addProductImages , isPending : isAddImagesPending , isError : isAddImagesError , isSuccess : isAddImagesSuccess , reset : addImagesReset} = useAddProductImages();
   const {mutate : deleteProductImages , isPending : isDeleteImagesPending , isError : isDeleteImagesError , isSuccess : isDeleteImagesSuccess , reset : deleteImagesReset} = useDeleteProductImages();
   const [editingProductId , setEditingProductId] = useState(null);
-  const {data : editingProduct} = useProducts(editingProductId ? "product_id=" + editingProductId : null);
+  const {data : editingProduct = {}} = useProducts(editingProductId ? "product_id=" + editingProductId : null);
   const [showForm, setShowForm] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [success , setSuccess] = useState(null);
@@ -205,7 +205,8 @@ const handleDelete = product_id =>{
     {/* Product Form Modal */}
     {showForm && (
       <ProductForm
-        product={editingProduct}
+        product={editingProduct?.product}
+        images={editingProduct?.images}
         onClose={() => setShowForm(false)}
         onSave={handleSave}
         categories={categories}
