@@ -12,6 +12,7 @@ const statusLabels = ['Pending', 'Confirmed', 'Shipped', 'Delivered'];
 
 export default function OrderCard({ order }) {
   const [expanded, setExpanded] = useState(false);
+  console.log(order)
 
   const paymentStatusColors = {
     pending: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
@@ -124,13 +125,13 @@ export default function OrderCard({ order }) {
                 <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700">
                   <img
                     src={item.product_image_url || '/placeholder.png'}
-                    alt={item.name}
-                    className="h-full w-full object-cover"
+                    alt={item.product_name}
+                    className="h-full w-full object-cover text-xs text-center text-opacity-5"
                   />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                    {item.name}
+                    {item.product_name}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {item.category_name}
