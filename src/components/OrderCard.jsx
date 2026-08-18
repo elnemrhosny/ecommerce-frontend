@@ -12,7 +12,6 @@ const statusLabels = ['Pending', 'Confirmed', 'Shipped', 'Delivered'];
 
 export default function OrderCard({ order }) {
   const [expanded, setExpanded] = useState(false);
-  console.log(order)
 
   const paymentStatusColors = {
     pending: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
@@ -133,9 +132,7 @@ export default function OrderCard({ order }) {
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                     {item.product_name}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {item.category_name}
-                  </p>
+                  
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-300">
                   ${Number(item.product_price).toFixed(2)} × {item.quantity}

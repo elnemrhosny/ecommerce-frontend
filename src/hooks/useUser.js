@@ -31,7 +31,9 @@ export function useLoginGoogle( ){
         onSuccess : (data) =>{
             queryClient.invalidateQueries({queryKey : ['cart']});
             queryClient.setQueryData(['user'] , data);
-        }
+        } , 
+        use_fedcm_for_promot : true , 
+        prompt : 'select_account'
     });
     return result;
 }
