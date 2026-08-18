@@ -1,5 +1,5 @@
 // components/Navbar.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect , useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -10,6 +10,7 @@ import Spinner from "./Spinner";
 import { useCart } from "../hooks/useCart";
 import { useWishlistCount } from "../hooks/useUser";
 import GoogleLoginButton from "./GoogleLoginButton";
+import  useClickOutside  from "../hooks/useClickOutside";
 
 export default function Navbar({}) {
   const { darkMode, toggleDarkMode } = useTheme();
@@ -39,6 +40,10 @@ export default function Navbar({}) {
   const [googleError ,setGoogleError] = useState(false);
   const navigate = useNavigate();
   const cartCount = cart?.items?.length;
+  const categoriesDropdownRef = useRef(null);
+  const loginDropdownRef = useRef(null);
+  useClickOutside(categoriesDropdownRef, () => setIsMenuOpen(false));
+  useClickOutside(loginDropdownRef, () => setShowLogin(false));
 
   // Login handler
   const handleLogin = async (e) => {
@@ -266,7 +271,7 @@ export default function Navbar({}) {
                     Login
                   </button>
                   {showLogin && (
-                    <div className="absolute right-0 mt-2 w-72 rounded-xl border border-gray-100 bg-white p-5 shadow-xl dark:border-gray-600 dark:bg-gray-800">
+                    <div ref = {loginDropdownRef} className="absolute right-0 mt-2 w-72 rounded-xl border border-gray-100 bg-white p-5 shadow-xl dark:border-gray-600 dark:bg-gray-800">
                       <h3 className="mb-3 text-lg font-semibold text-gray-800 dark:text-gray-100">
                         Sign In
                       </h3>
@@ -356,7 +361,7 @@ export default function Navbar({}) {
 
           {/* Mobile Menu (hamburger) */}
           {isMenuOpen && (
-            <div className="border-t border-gray-100 py-4 space-y-4 md:hidden dark:border-gray-600">
+            <div ref={categoriesDropdownRef} className="border-t border-gray-100 py-4 space-y-4 md:hidden dark:border-gray-600">
               {/* Search on mobile */}
               <form onSubmit={handleSearch} className="px-2">
                 <input

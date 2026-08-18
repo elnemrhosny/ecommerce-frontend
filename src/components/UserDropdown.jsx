@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState , useRef } from "react";
 import { Link } from "react-router-dom";
+import useClickOutside from "../hooks/useClickOutside";
 
 export default function UserDropdown({ user, onLogout }) {
   const [open, setOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  useClickOutside(dropdownRef, () => setOpen(false));
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 sm:px-4 sm:py-2 shrink-0 overflow-hidden max-w-[160px]"
