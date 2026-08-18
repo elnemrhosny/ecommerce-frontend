@@ -83,7 +83,7 @@ export default function Navbar({}) {
             <div className="shrink-0">
               <Link
                 to="/"
-                className="text-2xl font-bold text-indigo-600 dark:text-indigo-400"
+                className="text-2xl sm:text-lg font-bold text-indigo-600 dark:text-indigo-400"
               >
                 ShopName
               </Link>
