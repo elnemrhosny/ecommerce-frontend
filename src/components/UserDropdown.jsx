@@ -8,11 +8,23 @@ export default function UserDropdown({ user, onLogout }) {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 sm:px-4 sm:py-2"
+        className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 sm:px-4 sm:py-2 shrink-0 overflow-hidden max-w-[160px]"
       >
-        <span className="max-w-30 truncate">{user.name}</span>
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        {/* On very small screens, show only the initial or a generic icon */}
+        <span className="hidden sm:inline truncate max-w-[120px]">{user.name}</span>
+        <span className="inline sm:hidden">Account</span> {/* or use user.name[0] */}
+        <svg
+          className="h-4 w-4 flex-shrink-0"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
         </svg>
       </button>
 
@@ -46,18 +58,19 @@ export default function UserDropdown({ user, onLogout }) {
               className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 dark:text-gray-200 dark:hover:bg-gray-700"
             >
               <svg
-  className="h-6 w-6"
-  fill="none"
-  stroke="currentColor"
-  viewBox="0 0 24 24"
->
-  <path
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth={2}
-    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-  />
-</svg>   Wishlist
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
+              </svg>
+              Wishlist
             </Link>
             {user.role === "admin" && (
               <Link
@@ -67,7 +80,6 @@ export default function UserDropdown({ user, onLogout }) {
               >
                 📦 Admin Panel
               </Link>
-              
             )}
             <hr className="my-1 dark:border-gray-600" />
             <button
