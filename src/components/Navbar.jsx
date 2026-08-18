@@ -76,7 +76,7 @@ export default function Navbar({}) {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-white shadow-sm overflow-x-hidden dark:bg-gray-800 dark:border-b dark:border-gray-700">
+      <nav className="sticky top-0 z-50 bg-white shadow-sm dark:bg-gray-800 dark:border-b dark:border-gray-700">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
@@ -159,7 +159,7 @@ export default function Navbar({}) {
             </div>
 
             {/* Right side: cart, dark mode toggle, login/user, hamburger */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
               {/* Cart button – always visible */}
               {isCartLoading ? <Spinner/> : <Link
                 to="/cart"
@@ -326,7 +326,7 @@ export default function Navbar({}) {
               {/* Hamburger menu (mobile) */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 focus:outline-none md:hidden dark:text-gray-400 dark:hover:bg-gray-700"
+                className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 focus:outline-none md:hidden dark:text-gray-400 dark:hover:bg-gray-700"
               >
                 <svg
                   className="h-6 w-6"
