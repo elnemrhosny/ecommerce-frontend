@@ -20,7 +20,7 @@ export function useLogin( ){
             queryClient.invalidateQueries({queryKey : ['orders']});
             queryClient.setQueryData(['user'] , data);
         }
-    });
+    }); 
     return result;
 }
 

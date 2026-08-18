@@ -263,7 +263,7 @@ export default function Navbar({}) {
               ) : user ? (
                 <UserDropdown user={user} onLogout={logout} />
               ) : (
-                <div className="relative">
+                <div ref = {loginDropdownRef} className="relative">
                   <button
                     onClick={() => setShowLogin(!showLogin)}
                     className="rounded-full bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-700 sm:px-5 sm:py-2 dark:bg-indigo-500 dark:hover:bg-indigo-600"
@@ -271,7 +271,7 @@ export default function Navbar({}) {
                     Login
                   </button>
                   {showLogin && (
-                    <div ref = {loginDropdownRef} className="absolute right-0 mt-2 w-72 rounded-xl border border-gray-100 bg-white p-5 shadow-xl dark:border-gray-600 dark:bg-gray-800">
+                    <div  className="absolute right-0 mt-2 w-72 rounded-xl border border-gray-100 bg-white p-5 shadow-xl dark:border-gray-600 dark:bg-gray-800">
                       <h3 className="mb-3 text-lg font-semibold text-gray-800 dark:text-gray-100">
                         Sign In
                       </h3>
@@ -330,7 +330,7 @@ export default function Navbar({}) {
 
               {/* Hamburger menu (mobile) */}
               <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                onClick={() => setIsMenuOpen(!isMenuOpen)} ref={categoriesDropdownRef}
                 className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 focus:outline-none md:hidden dark:text-gray-400 dark:hover:bg-gray-700"
               >
                 <svg
@@ -361,7 +361,7 @@ export default function Navbar({}) {
 
           {/* Mobile Menu (hamburger) */}
           {isMenuOpen && (
-            <div ref={categoriesDropdownRef} className="border-t border-gray-100 py-4 space-y-4 md:hidden dark:border-gray-600">
+            <div  className="border-t border-gray-100 py-4 space-y-4 md:hidden dark:border-gray-600">
               {/* Search on mobile */}
               <form onSubmit={handleSearch} className="px-2">
                 <input
