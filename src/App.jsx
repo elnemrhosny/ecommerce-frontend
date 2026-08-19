@@ -9,6 +9,7 @@ import ProductPage from "./pages/ProductPage.jsx";
 import AdminCategories from "./pages/admin/AdminCategories.jsx";
 import AdminLayout from "./pages/admin/AdminLayout.jsx";
 import AdminProducts from "./pages/admin/AdminProducts.jsx";
+import AdminOrders from "./pages/admin/AdminOrders.jsx";
 import AdminRoute from "./components/AdminRoute.jsx";
 import { QueryClient, QueryClientProvider , QueryCache , MutationCache } from "@tanstack/react-query";
 import UserProfile from "./pages/UserProfile.jsx";
@@ -16,7 +17,7 @@ import { ThemeProvider } from "./contexts/ThemeContext.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import WishlistPage from "./pages/WishlistPage.jsx";
 import OrdersPage from "./pages/OrdersPage.jsx";
-import OrderSuccessPage from "./pages/OrderSuccessPage.jsx";
+import OrderStatusPage from "./pages/OrderStatusPage.jsx";
 import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
 import Footer from "./components/Footer.jsx";
 
@@ -60,6 +61,7 @@ function App() {
                 <Route index element={<Navigate to="products" replace />} />
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="categories" element={<AdminCategories />} />
+              <Route path="orders" element={<AdminOrders />} />
               </Route>
               <Route path="/" element={<MainPage />} />
               <Route path="/register" element = {<RegisterPage/>} />
@@ -68,7 +70,7 @@ function App() {
               <Route path="/profile" element = {<UserProfile/>}/>
               <Route path="/wishlist" element = {<WishlistPage/>}/>
               <Route path = "/orders" element = {<OrdersPage/>} />
-              <Route path="/order-success" element = {<OrderSuccessPage/>}/>
+              <Route path="/order-status" element = {<OrderStatusPage/>}/>
               <Route path="/verify-email" element = {<VerifyEmailPage/>} />
             </Routes>
             <Footer/>
