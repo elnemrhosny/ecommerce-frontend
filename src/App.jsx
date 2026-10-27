@@ -47,7 +47,7 @@ const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 function OptionalGoogleProvider({ children }) {
   return googleClientId ? (
-    <GoogleOAuthProvider clientId={googleClientId}>
+    <GoogleOAuthProvider clientId={googleClientId} locale="en">
       {children}
     </GoogleOAuthProvider>
   ) : (
