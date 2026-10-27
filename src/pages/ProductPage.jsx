@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Image from '../components/Image';
 import Lightbox from '../components/Lightbox';
+import { getProductImages, getGalleryIndex } from '../functions/productImages';
 import Spinner from '../components/Spinner';
-import ConfirmModal from '../components/ConfirmModal';
 import ErrorModal from '../components/ErrorModal';
 import SuccessModal from '../components/SuccessModal';
 import { useProducts } from '../hooks/useProducts';
@@ -36,7 +36,7 @@ export default function ProductPage() {
   if (isProductError || !product) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20 text-center">
-        <p className="text-red-500">{isProductError || 'Product not found'}</p>
+        <p className="text-red-500">{isProductError ? 'Could not load this product. Please try again.' : 'Product not found'}</p>
         <Link to="/" className="mt-4 inline-block text-indigo-600 hover:underline">
           ← Back to products
         </Link>
@@ -52,24 +52,25 @@ export default function ProductPage() {
   };
   
 
-  const allImages =
-    data.images?.length > 0 ? data.images : [];
+  const allImages = getProductImages(product, data.images);
+  const galleryIndex = getGalleryIndex(lightboxIndex, allImages.length);
 
   const openLightbox = (index) => {
-    setLightboxIndex(index);
+    if (allImages.length === 0) return;
+    setLightboxIndex(getGalleryIndex(index, allImages.length));
     setLightboxOpen(true);
   };
 
   const closeLightbox = () => setLightboxOpen(false);
 
   const goToPrev = () => {
-    setLightboxIndex(
-      (prev) => (prev - 1 + allImages.length) % allImages.length
-    );
+    if (allImages.length === 0) return;
+    setLightboxIndex((prev) => (getGalleryIndex(prev, allImages.length) - 1 + allImages.length) % allImages.length);
   };
 
   const goToNext = () => {
-    setLightboxIndex((prev) => (prev + 1) % allImages.length);
+    if (allImages.length === 0) return;
+    setLightboxIndex((prev) => (getGalleryIndex(prev, allImages.length) + 1) % allImages.length);
   };
 
 
@@ -102,19 +103,23 @@ export default function ProductPage() {
       {/* IMAGE GALLERY */}
       <div className="space-y-4">
         {/* Main image – clickable */}
-        <div
-          className="aspect-[4/3] overflow-hidden rounded-xl bg-gray-100 cursor-pointer dark:bg-gray-700"
-          onClick={() => openLightbox(lightboxIndex)}
+        <button
+          type="button"
+          className="block w-full aspect-[4/3] overflow-hidden rounded-xl bg-gray-100 cursor-pointer disabled:cursor-default dark:bg-gray-700"
+          disabled={allImages.length === 0}
+          aria-label={allImages.length ? `Enlarge image of ${product.name}` : 'No product image available'}
+          onClick={() => openLightbox(galleryIndex)}
         >
           <Image
-            src={allImages[lightboxIndex]?.image_url}
+            key={allImages[galleryIndex]?.image_url || 'placeholder'}
+            src={allImages[galleryIndex]?.image_url || '/placeholder.png'}
             alt={product.name}
             aspectRatio="4/3"
             objectFit="cover"
             containerClassName="rounded-xl"
             className='h-full w-full object-cover'
           />
-        </div>
+        </button>
 
         {/* Thumbnails */}
         {allImages.length > 1 && (
@@ -126,7 +131,7 @@ export default function ProductPage() {
                   setLightboxIndex(idx);
                 }}
                 className={`h-20 w-20 shrink-0 rounded-lg overflow-hidden border-2 transition ${
-                  idx === lightboxIndex
+                  idx === galleryIndex
                     ? 'border-indigo-600 dark:border-indigo-400'
                     : 'border-gray-200 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500'
                 }`}
@@ -174,7 +179,7 @@ export default function ProductPage() {
         {/* Add to Cart / Wishlist */}
         <div className="mt-auto flex gap-3">
           <button
-            disabled={product.stock === 0}
+            disabled={isCartAddLoading || product.stock === 0}
             className="flex-1 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer dark:bg-indigo-500 dark:hover:bg-indigo-600"
             onClick={() => handleCartAdd({ product_id: product.product_id })}
           >
@@ -197,7 +202,7 @@ export default function ProductPage() {
     <Lightbox
       isOpen={lightboxOpen}
       images={allImages}
-      currentIndex={lightboxIndex}
+      currentIndex={galleryIndex}
       onClose={closeLightbox}
       onPrev={goToPrev}
       onNext={goToNext}

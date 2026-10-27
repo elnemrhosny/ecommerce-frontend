@@ -28,15 +28,14 @@ export default function CartPage() {
     try {
       submitOrder({} , {
         onSuccess : data => {
-          console.log(data)
           window.location.href = data.redirectUrl;
-        } , 
+        } ,
         onError : (err) => setError(err.response.data)
       });
-  
+
     } catch (err) {
       setError('Checkout failed. Please try again.');
-    } 
+    }
   };
 
 

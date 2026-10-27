@@ -4,7 +4,7 @@ import { validateProduct } from "../../functions/products";
 import ErrorModal from "../ErrorModal";
 import ConfirmModal from "../ConfirmModal";
 
-export default function ProductForm({ product, onClose, onSave , categories , images}) {
+export default function ProductForm({ product, onClose, onSave , categories , images, isSaving = false}) {
   const isNew = !product;
   const fileInputRef = useRef(null);
   const prevProductIdRef = useRef(null);
@@ -69,7 +69,7 @@ export default function ProductForm({ product, onClose, onSave , categories , im
       setImagesToDelete([]);
     }
     prevProductIdRef.current = currentId;
-  }, [product]);
+  }, [product, images]);
 
   // Generic input handler
   const handleChange = (e) => {
@@ -122,6 +122,7 @@ export default function ProductForm({ product, onClose, onSave , categories , im
   // Form submission
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isSaving) return;
     const validation = validateProduct(form);
     if (!validation.valid) {
       setErrors(validation.messages);
@@ -308,15 +309,17 @@ export default function ProductForm({ product, onClose, onSave , categories , im
           <button
             type="button"
             onClick={onClose}
+            disabled={isSaving}
             className="px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
           >
             Cancel
           </button>
           <button
             type="submit"
+            disabled={isSaving}
             className="px-6 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 dark:hover:bg-indigo-600 transition"
           >
-            {isNew ? "Create Product" : "Update Product"}
+            {isSaving ? "Saving..." : isNew ? "Create Product" : "Update Product"}
           </button>
         </div>
       </form>

@@ -1,5 +1,5 @@
 // pages/admin/AdminProducts.jsx
-import {useCallback, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import FilterBar from "../../components/FilterBar";
 import ProductForm from "../../components/admin/ProductForm";
@@ -12,13 +12,13 @@ import { useAddProduct, useAddProductImages, useDeleteProduct, useDeleteProductI
 
 export default function AdminProducts() {
   const [searchParams , setSearchParams] = useSearchParams();
-  const {data : categories = [] , isLoading : isCategoriesLoading , isError : isCategoriesError} = useCategories();
+  const {data : categories = []} = useCategories();
   const {data : {products = [] , count} = {} , isLoading : isProductsLoading , isError : isProductsError} = useProducts(searchParams);
-  const {mutate : addProduct , isPending : isAddPending , isError : isAddError , isSuccess : isAddSuccess , reset : addReset} = useAddProduct();
-  const {mutate : modifyProduct , isPending : isModifyPending , isError : isModifyError , isSuccess : isModifySuccess , reset : modifyReset} = useModifyProduct();
-  const {mutate : deleteProduct , isPending : isDeletePending , isError : isDeleteError , isSuccess : isDeleteSuccess , reset : deleteReset} = useDeleteProduct();
-  const {mutate : addProductImages , isPending : isAddImagesPending , isError : isAddImagesError , isSuccess : isAddImagesSuccess , reset : addImagesReset} = useAddProductImages();
-  const {mutate : deleteProductImages , isPending : isDeleteImagesPending , isError : isDeleteImagesError , isSuccess : isDeleteImagesSuccess , reset : deleteImagesReset} = useDeleteProductImages();
+  const { mutateAsync: addProduct, isPending: isAddPending } = useAddProduct();
+  const { mutateAsync: modifyProduct, isPending: isModifyPending } = useModifyProduct();
+  const { mutateAsync: deleteProduct, isPending: isDeletePending } = useDeleteProduct();
+  const { mutateAsync: addProductImages, isPending: isAddImagesPending } = useAddProductImages();
+  const { mutateAsync: deleteProductImages, isPending: isDeleteImagesPending } = useDeleteProductImages();
   const [editingProductId , setEditingProductId] = useState(null);
   const {data : editingProduct = {}} = useProducts(editingProductId ? "product_id=" + editingProductId : null);
   const [showForm, setShowForm] = useState(false);
@@ -29,68 +29,67 @@ export default function AdminProducts() {
   const limit = parseInt(searchParams.get("limit") || "12");
   const offset = parseInt(searchParams.get("offset") || "0");
 
-  const handleSave = async (productData, isNew, newImages, imagesToDelete) => {
-    try {
-      if(isNew){
-        addProduct(productData , {
-          onSuccess : (data) =>{
-            const productId = data.product_id;
-            handleImages(productId , newImages , imagesToDelete);
-          }
-        })
-      }
-      else{
-        modifyProduct(productData);
-        handleImages(productData.product_id , newImages , imagesToDelete);
-      }
-      // Success feedback
-      setShowForm(false);
-    } catch (err) {
-      if (err.response?.status === 409) {
-        setError("Duplicate product name/slug");
-      }
+  const isSaving = isAddPending || isModifyPending || isAddImagesPending || isDeleteImagesPending;
+
+  const errorMessage = (err, fallback) => {
+    if (err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT') {
+      return 'The request timed out. Refresh the product list to check whether it completed before trying again.';
+    }
+    return typeof err.response?.data === 'string' ? err.response.data : fallback;
+  };
+
+  const handleImages = async (productId, newImages, imagesToDelete) => {
+    // Finish removals before uploads so main-image updates cannot race.
+    if (imagesToDelete?.length) await deleteProductImages({ imagesToDelete });
+    if (newImages?.length) {
+      const formData = new FormData();
+      formData.append('product_id', productId);
+      newImages.forEach((file) => formData.append('images', file));
+      await addProductImages(formData);
     }
   };
 
-  const handleImages = (productId , newImages , imagesToDelete) =>{
-    if (newImages && newImages.length > 0) {
-        const formData = new FormData();
-        formData.append("product_id", productId);
-        // Append each file under the same field name 'images' (as expected by multer's .array('images'))
-        newImages.forEach((file) => formData.append("images", file));
-        addProductImages(formData);
-      }
-      // 3. Delete images marked for deletion
-      if (imagesToDelete && imagesToDelete.length > 0) deleteProductImages({imagesToDelete});
-  }
+  const handleSave = async (productData, isNew, newImages, imagesToDelete) => {
+    if (isSaving) return;
+    let productSaved = false;
+    try {
+      const saved = isNew ? await addProduct(productData) : await modifyProduct(productData);
+      productSaved = true;
+      // The API returns { product, images }, not a top-level product_id.
+      const productId = isNew ? saved.product.product_id : productData.product_id;
+      await handleImages(productId, newImages, imagesToDelete);
+      setShowForm(false);
+      setSuccess(isNew ? 'Product added' : 'Product updated');
+    } catch (err) {
+      // A retry must edit an already-created product, not create it again.
+      if (productSaved) setShowForm(false);
+      const message = errorMessage(err, 'Could not save the product. Please try again.');
+      setError(productSaved ? `Product saved, but image changes may be incomplete. Reopen Edit to check before retrying. ${message}` : message);
+    }
+  };
 
-  const handleEditClick =  (productId) => {
-  try {
+  const handleEditClick = (productId) => {
     setEditingProductId(productId);
-      setShowForm(true);
-    
-  } catch (err) {
-    setError('Failed to load product details');
-  }
-};
+    setShowForm(true);
+  };
 
-const handleDelete = product_id =>{
-  deleteProduct({product_id});
-  setShowConfirmDelete(false);
-  setSuccess('Product deleted')
-}
+  const handleDelete = async (product_id) => {
+    if (isDeletePending) return;
+    setError(null);
+    setSuccess(null);
+    try {
+      await deleteProduct({ product_id });
+      setSuccess('Product deleted');
+    } catch (err) {
+      setError(errorMessage(err, 'Could not delete the product. Please try again.'));
+    } finally {
+      setShowConfirmDelete(false);
+    }
+  };
 
   const currentPage = Math.floor(offset / limit) + 1;
   const totalPages = Math.ceil(count / limit);
 
-
-  if(isAddSuccess){ setSuccess('Product added'); addReset();}
-  if(isModifySuccess) {setSuccess('Product updated'); modifyReset()}
-  if(isDeleteSuccess) {setSuccess('Product deleted'); deleteReset()}
-
-  if(isAddError) setError('Problem adding product please try again');
-  if(isModifyError) setError('Problem updating product please try again');
-  if(isDeleteError) setError('Problem deleting product please try again');
 
  return (
   <>
@@ -114,6 +113,8 @@ const handleDelete = product_id =>{
 
     {isProductsLoading ? (
       <Spinner />
+    ) : isProductsError ? (
+      <p role="alert" className="text-red-600 dark:text-red-400">Could not load products. Please refresh and try again.</p>
     ) : (
       <>
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-auto">
@@ -151,6 +152,7 @@ const handleDelete = product_id =>{
                     </button>
                     <button
                       onClick={() => setShowConfirmDelete(p.product_id)}
+                      disabled={isDeletePending}
                       className="text-red-600 hover:underline text-sm dark:text-red-400"
                     >
                       Delete
@@ -209,13 +211,15 @@ const handleDelete = product_id =>{
         images={editingProduct?.images}
         onClose={() => setShowForm(false)}
         onSave={handleSave}
+        isSaving={isSaving}
         categories={categories}
       />
     )}
 
     <ConfirmModal
       isOpen={showConfirmDelete}
-      onClose={() => setShowConfirmDelete(null)}
+      onClose={() => { if (!isDeletePending) setShowConfirmDelete(null); }}
+      loading={isDeletePending}
       onConfirm={() => handleDelete(showConfirmDelete)}
       title="Delete Product"
       message="Are you sure you want to delete this product? This cannot be undone."

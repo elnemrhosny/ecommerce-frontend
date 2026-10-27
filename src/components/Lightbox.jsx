@@ -3,13 +3,15 @@ import { useEffect, useCallback, useRef } from 'react';
 
 export default function Lightbox({
   images = [],
-  currentIndex,
+  currentIndex = 0,
   onClose,
   onPrev,
   onNext,
   isOpen,
 }) {
-  const hasMultiple = images.length > 1;
+  const currentImage = images?.[currentIndex];
+  const isVisible = Boolean(isOpen && currentImage?.image_url);
+  const hasMultiple = images?.length > 1;
 
   // Stable callback with ref
   const onCloseRef = useRef(onClose);
@@ -26,18 +28,19 @@ export default function Lightbox({
   }, [hasMultiple]);
 
   useEffect(() => {
-    if (!isOpen) return;   // don't do anything when closed
+    if (!isVisible) return;
 
     document.addEventListener('keydown', handleKeyDown);
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
+      document.body.style.overflow = previousOverflow;
     };
-  }, [isOpen, handleKeyDown]);
+  }, [isVisible, handleKeyDown]);
 
-  if (!isOpen) return null;
+  if (!isVisible) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
@@ -80,7 +83,7 @@ export default function Lightbox({
 
       {/* Image */}
       <img
-        src={images[currentIndex].image_url}
+        src={currentImage.image_url}
         alt="Enlarged view"
         className="max-h-[90vh] max-w-[90vw] object-contain select-none"
         onClick={onClose}
