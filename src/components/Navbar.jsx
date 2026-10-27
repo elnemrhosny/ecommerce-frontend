@@ -1,269 +1,261 @@
-import { useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
-import { useCategories } from "../hooks/useCategories";
-import UserDropdown from "./UserDropdown";
-import ErrorModal from "./ErrorModal";
-import Spinner from "./Spinner";
 import { useCart } from "../hooks/useCart";
-import { useWishlistCount } from "../hooks/useUser";
-import GoogleLoginButton from "./GoogleLoginButton";
-import useClickOutside from "../hooks/useClickOutside";
+import { useCategories } from "../hooks/useCategories";
+import Icon from "./Icon";
 
-export default function Navbar({}) {
-  const { darkMode, toggleDarkMode } = useTheme();
+export default function Navbar() {
   const {
     user,
-    isLoading: isUserLoading,
-    login,
+    isLoading,
     logout,
-    isLoginPending,
-    isLoginError,
-    resetLogin,
     isLogoutPending,
-    loginWithGoogle,
+    isLogoutError,
+    logoutError,
   } = useAuth();
-  const { data: cart, isLoading: isCartLoading } = useCart();
-  const { data: wishlistCount = 0, isLoading: isWishlistLoading } = useWishlistCount();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
-  const [searchQuery, setSearchQuery] = useState("");
-  const {
-    data: categories = [],
-    isLoading: isCategoriesLoading,
-    isError: isCategoriesError,
-    error: categoriesError,
-  } = useCategories();
-  const [googleError, setGoogleError] = useState(false);
+  const { darkMode, toggleDarkMode } = useTheme();
+  const { data: cart } = useCart();
+  const { data: categories = [] } = useCategories();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const navigate = useNavigate();
-  const cartCount = cart?.items?.length;
-
-  const loginDropdownRef = useRef(null);
-  useClickOutside(loginDropdownRef, () => setShowLogin(false));
-
-  // Handlers remain the same
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    const success = login({ email: loginData.email, password: loginData.password });
-    if (success) {
-      setShowLogin(false);
-      setLoginData({ email: "", password: "" });
-    }
+  const cartCount =
+    cart?.items?.reduce((sum, item) => sum + Number(item.quantity || 1), 0) ||
+    0;
+  const close = () => {
+    setMenuOpen(false);
+    setSearchOpen(false);
   };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery("");
-      setSidebarOpen(false);
-    }
+  const search = (event) => {
+    event.preventDefault();
+    const value = new FormData(event.currentTarget).get("search").trim();
+    navigate(value ? `/?search=${encodeURIComponent(value)}` : "/");
+    close();
   };
-
-  const handleLogout = async (e) => {
-    e.preventDefault();
-    const success = logout();
-    if (success) {
-      setShowLogin(false);
-      setLoginData({ email: "", password: "" });
-    }
-  };
-
-  if (isUserLoading || isLoginPending || isLogoutPending) return <Spinner />;
-
   return (
-    <>
-      <nav className="sticky top-0 z-50 bg-white shadow-sm dark:bg-gray-800 dark:border-b dark:border-gray-700">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            {/* Left side: sidebar toggle + logo */}
-            <div className="flex items-center gap-2 md:gap-4">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 focus:outline-none"
-                title="Categories"
-              >
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-              <Link to="/" className="text-xl md:text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                ShopName
-              </Link>
-            </div>
-
-            {/* Desktop Search */}
-            <div className="hidden md:flex md:flex-1 md:items-center md:justify-center md:px-6">
-              <form onSubmit={handleSearch} className="relative w-full max-w-md">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search products..."
-                  className="w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 transition focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-indigo-500 dark:focus:bg-gray-700 dark:focus:ring-indigo-700"
-                />
-                <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </form>
-            </div>
-
-            {/* Right side icons */}
-            <div className="flex items-center space-x-1 sm:space-x-3">
-              {/* Cart */}
-              {isCartLoading ? <Spinner /> : (
-                <Link to="/cart" className="relative rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700" title="Cart">
-                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
-                  </svg>
-                  {cartCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-indigo-600 px-1 text-[11px] font-bold leading-none text-white ring-2 ring-white dark:ring-gray-800">
-                      {cartCount}
-                    </span>
-                  )}
-                </Link>
-              )}
-
-              {/* Wishlist (visible only for logged-in users) */}
-              {isWishlistLoading ? <Spinner /> : user ? (
-                <Link to="/wishlist" className="relative rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700" title="Wishlist">
-                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                  {wishlistCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold leading-none text-white ring-2 ring-white dark:ring-gray-800">
-                      {wishlistCount}
-                    </span>
-                  )}
-                </Link>
-              ) : null}
-
-              {/* Dark Mode Toggle */}
-              <button onClick={toggleDarkMode} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700" title="Toggle theme">
-                {darkMode ? (
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                ) : (
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                  </svg>
-                )}
-              </button>
-
-              {/* User / Login / Register */}
-              {isUserLoading ? (
-                <span className="text-sm text-gray-400 dark:text-gray-500">Loading...</span>
-              ) : user ? (
-                <UserDropdown user={user} onLogout={logout} />
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <div ref={loginDropdownRef} className="relative">
-                    <button
-                      onClick={() => setShowLogin(!showLogin)}
-                      className="rounded-full bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
-                    >
-                      Login
-                    </button>
-                    {showLogin && (
-                      <div className="absolute right-0 mt-2 w-72 origin-top-right rounded-xl border border-gray-100 bg-white p-5 shadow-xl dark:border-gray-600 dark:bg-gray-800 z-50 transition-all duration-200 ease-out">
-                        <h3 className="mb-3 text-lg font-semibold text-gray-800 dark:text-gray-100">Sign In</h3>
-                        <form onSubmit={handleLogin} className="space-y-3">
-                          <input
-                            type="email"
-                            placeholder="Email"
-                            value={loginData.email}
-                            onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-700"
-                            required
-                          />
-                          <input
-                            type="password"
-                            placeholder="Password"
-                            value={loginData.password}
-                            onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-700"
-                            required
-                          />
-                          <button type="submit" className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600">
-                            Log In
-                          </button>
-                        </form>
-                        <div className="flex justify-center mt-4">
-                          <GoogleLoginButton
-                            onSuccess={async (credential) => await loginWithGoogle({ credential })}
-                            onError={() => setGoogleError('Login with Google failed')}
-                          />
-                        </div>
-                        <p className="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
-                          Don't have an account?{" "}
-                          <Link to="/register" className="text-indigo-600 hover:underline dark:text-indigo-400">Register</Link>
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <Link
-                    to="/register"
-                    className="rounded-full border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
-                  >
-                    Register
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Sidebar Backdrop */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div
-        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85%] bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="p-5 h-full flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <span className="text-xl font-bold text-indigo-600 dark:text-indigo-400">Categories</span>
-            <button onClick={() => setSidebarOpen(false)} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {categories.length > 0 ? (
-              <nav className="space-y-1">
-                {categories.map((cat) => (
-                  <Link
-                    key={cat.id || cat.category_id}
-                    to={`/?category_id=${cat.id || cat.category_id}`}
-                    onClick={() => setSidebarOpen(false)}
-                    className="block rounded-lg px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-indigo-400"
-                  >
-                    {cat.name}
-                  </Link>
-                ))}
-              </nav>
-            ) : (
-              <p className="text-gray-400 dark:text-gray-500">No categories</p>
+    <header
+      className="site-header sticky top-0 z-40"
+      onKeyDown={(event) => {
+        if (event.key === "Escape") close();
+      }}
+    >
+      <div className="site-width flex h-[82px] items-center justify-between gap-4">
+        <Link
+          to="/"
+          onClick={close}
+          className="wordmark"
+          aria-label="ShopName home"
+        >
+          shopname<span className="wordmark-dot">.</span>
+        </Link>
+        <nav
+          aria-label="Main navigation"
+          className="hidden items-center gap-8 lg:flex"
+        >
+          <NavLink to="/" className="header-link" end>
+            Shop all
+          </NavLink>
+          <Link
+            to="/?sort_by=created_at&order=DESC#collection"
+            className="header-link"
+          >
+            Latest finds
+          </Link>
+          {user && (
+            <NavLink to="/orders" className="header-link">
+              My orders
+            </NavLink>
+          )}
+          {user?.role === "admin" && (
+            <NavLink to="/admin/products" className="header-link">
+              Manage store
+            </NavLink>
+          )}
+        </nav>
+        <div className="flex items-center gap-0.5 sm:gap-2">
+          <button
+            className="icon-button"
+            onClick={() => setSearchOpen(!searchOpen)}
+            aria-label="Search products"
+            aria-expanded={searchOpen}
+            aria-controls="header-search"
+          >
+            <Icon name="search" />
+          </button>
+          <button
+            className="icon-button hidden sm:inline-flex"
+            onClick={toggleDarkMode}
+            aria-label={
+              darkMode ? "Switch to light theme" : "Switch to dark theme"
+            }
+          >
+            <Icon name={darkMode ? "sun" : "moon"} size={19} />
+          </button>
+          {user && (
+            <Link
+              className="icon-button hidden sm:inline-flex"
+              to="/wishlist"
+              aria-label="Wishlist"
+            >
+              <Icon name="heart" />
+            </Link>
+          )}
+          <Link
+            className="icon-button relative"
+            to="/cart"
+            aria-label={`Shopping bag${cartCount ? `, ${cartCount} items` : ""}`}
+          >
+            <Icon name="bag" />
+            {cartCount > 0 && (
+              <span className="absolute right-0 top-0 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-gray-900 px-1 text-[9px] text-white dark:bg-gray-100 dark:text-gray-900">
+                {cartCount}
+              </span>
             )}
-          </div>
+          </Link>
+          <span className="mx-2 hidden h-5 border-l line-border sm:block" />
+          {!isLoading &&
+            (user ? (
+              <>
+                <Link
+                  to="/profile"
+                  className="header-link hidden sm:inline-flex items-center gap-2"
+                >
+                  <Icon name="user" size={17} />
+                  Account
+                </Link>
+                <button
+                  className="header-link hidden xl:block"
+                  disabled={isLogoutPending}
+                  onClick={() => logout()}
+                >
+                  {isLogoutPending ? "Signing out…" : "Sign out"}
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="header-link hidden sm:inline-block"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/signup"
+                  className="btn-primary hidden min-h-10 px-4 py-2 text-xs sm:inline-flex"
+                >
+                  Sign up <Icon name="arrow" size={15} />
+                </Link>
+              </>
+            ))}
+          <button
+            className="icon-button lg:hidden"
+            aria-label={menuOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-navigation"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            <Icon name={menuOpen ? "close" : "menu"} />
+          </button>
         </div>
       </div>
-
-      {/* Error Modals */}
-      <ErrorModal isOpen={isLoginError} onClose={() => resetLogin()} message="Login failed" />
-      <ErrorModal isOpen={googleError} onClose={() => setGoogleError(false)} message={googleError} />
-    </>
+      {isLogoutError && (
+        <p role="alert" className="site-width pb-3 text-sm text-red-700">
+          {typeof logoutError?.response?.data === "string"
+            ? logoutError.response.data
+            : "Could not sign out. Please try again."}
+        </p>
+      )}
+      {searchOpen && (
+        <form
+          id="header-search"
+          onSubmit={search}
+          className="site-width flex gap-3 pb-5"
+        >
+          <label htmlFor="nav-search" className="sr-only">
+            Search the collection
+          </label>
+          <input
+            id="nav-search"
+            name="search"
+            className="field"
+            placeholder="What are you looking for?"
+            autoFocus
+            type="search"
+          />
+          <button className="btn-primary" type="submit">
+            Search
+          </button>
+          <button
+            className="icon-button"
+            aria-label="Close search"
+            type="button"
+            onClick={() => setSearchOpen(false)}
+          >
+            <Icon name="close" />
+          </button>
+        </form>
+      )}
+      {menuOpen && (
+        <nav
+          id="mobile-navigation"
+          aria-label="Mobile navigation"
+          className="site-width max-h-[70vh] overflow-auto border-t line-border py-5 lg:hidden"
+        >
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+            <Link to="/" onClick={close}>
+              Shop all
+            </Link>
+            {categories.map((category) => (
+              <Link
+                key={category.category_id}
+                to={`/?category_id=${category.category_id}`}
+                onClick={close}
+              >
+                {category.name}
+              </Link>
+            ))}
+            {user ? (
+              <>
+                <Link to="/profile" onClick={close}>
+                  My account
+                </Link>
+                <Link to="/orders" onClick={close}>
+                  My orders
+                </Link>
+                <Link to="/wishlist" onClick={close}>
+                  Wishlist
+                </Link>
+                {user.role === "admin" && (
+                  <Link to="/admin/products" onClick={close}>
+                    Manage store
+                  </Link>
+                )}
+                <button
+                  className="text-left"
+                  disabled={isLogoutPending}
+                  onClick={() => logout(undefined, { onSuccess: close })}
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" onClick={close}>
+                  Log in
+                </Link>
+                <Link to="/signup" onClick={close}>
+                  Create an account
+                </Link>
+              </>
+            )}
+            <button className="text-left muted" onClick={toggleDarkMode}>
+              {darkMode ? "Light appearance" : "Dark appearance"}
+            </button>
+          </div>
+        </nav>
+      )}
+    </header>
   );
 }

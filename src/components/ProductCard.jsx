@@ -1,114 +1,125 @@
-// components/ProductCard.jsx
+import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAddCart } from "../hooks/useCart";
-import { Link } from "react-router-dom";
-import ErrorModal from "./ErrorModal";
-import SuccessModal from "./SuccessModal";
 import { useAddWishlist, useDeleteWishlist } from "../hooks/useUser";
 import { useAuth } from "../contexts/AuthContext";
-import { useState } from "react";
+import { getApiError } from "../functions/apiErrors";
+import Image from "./Image";
+import Icon from "./Icon";
 
 export default function ProductCard({ product }) {
   const { user } = useAuth();
-  const {
-    mutate: handleCartAdd,
-    isPending,
-    isSuccess,
-    isError,
-    error,
-    reset,
-  } = useAddCart();
-  const { mutate: addWishlist } = useAddWishlist();
-  const { mutate: deleteWishlist } = useDeleteWishlist();
-  const [wishlistError, setWishlistError] = useState(false);
-  const inStock = product.stock > 0;
-  const handleToggleWishlist = (e) => {
-    e.preventDefault();
-    if (!user) setWishlistError("You have to be logged in the use the wishlist");
-    else if (product.is_wishlisted)
-      deleteWishlist({ product_id: product.product_id });
-    else addWishlist({ product_id: product.product_id });
+  const navigate = useNavigate();
+  const location = useLocation();
+  const cart = useAddCart();
+  const addWishlist = useAddWishlist();
+  const removeWishlist = useDeleteWishlist();
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const inStock =
+    Number(product.stock) > 0 && Number(product.is_active ?? 1) === 1;
+  const toggleWishlist = async () => {
+    if (!user) {
+      navigate("/login", {
+        state: { from: location.pathname + location.search },
+      });
+      return;
+    }
+    setError("");
+    try {
+      await (product.is_wishlisted ? removeWishlist : addWishlist).mutateAsync({
+        product_id: product.product_id,
+      });
+    } catch (err) {
+      setError(getApiError(err, "Could not update your wishlist."));
+    }
   };
-
+  const addToBag = async () => {
+    setError("");
+    setNotice("");
+    try {
+      await cart.mutateAsync({ product_id: product.product_id });
+      setNotice("Added to your bag");
+    } catch (err) {
+      setError(getApiError(err, "Could not add this item to your bag."));
+    }
+  };
   return (
-    <>
-      <div className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:shadow-gray-900/50">
-        {/* Image Section */}
+    <article className="product-card min-w-0">
+      <div className="product-tile">
         <Link
-          to={`product/${product.product_id}`}
-          className="relative h-48 w-full overflow-hidden bg-gray-50 dark:bg-gray-700"
+          to={`/product/${product.product_id}`}
+          aria-label={`View ${product.name}`}
         >
-          <img
-            src={product.image_url || "/placeholder.png"}
+          <Image
+            src={product.image_url}
             alt={product.name}
-            className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+            aspectRatio="4/5"
+            containerClassName="h-full"
           />
-          {product.category_name && (
-            <span className="absolute left-3 top-3 rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white dark:bg-indigo-500">
-              {product.category_name}
-            </span>
-          )}
         </Link>
-
-        {/* Details */}
-        <div className="flex flex-1 flex-col p-5">
-          <h3 className="text-lg font-semibold leading-snug text-gray-800 dark:text-gray-100 line-clamp-2">
-            {product.name}
-          </h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-            {product.description}
-          </p>
-
-          <div className="mt-auto flex items-center justify-between pt-4">
-            <span className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-              ${Number(product.price).toFixed(2)}
-            </span>
-            <span
-              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                inStock
-                  ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                  : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
-              }`}
-            >
-              {inStock ? "In Stock" : "Sold Out"}
-            </span>
-          </div>
-
-          {/* Quick actions */}
-          <div className="mt-4 flex gap-2">
-            <button
-              onClick={() => handleCartAdd({ product_id: product.product_id })}
-              disabled={isPending || !inStock}
-              className="flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:disabled:bg-indigo-500"
-            >
-              {isPending ? "Adding..." : "Add to Cart"}
-            </button>
-            <button
-              onClick={handleToggleWishlist}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
-            >
-              <span
-                className={
-                  product.is_wishlisted ? "text-red-500 dark:text-red-400" : ""
-                }
-              >
-                {product.is_wishlisted ? "♥" : "♡"}
-              </span>
-            </button>
-          </div>
-        </div>
+        <button
+          onClick={toggleWishlist}
+          disabled={addWishlist.isPending || removeWishlist.isPending}
+          className="icon-button absolute right-3 top-3 h-9 w-9 bg-white/90 text-gray-800"
+          aria-label={`${product.is_wishlisted ? "Remove" : "Save"} ${product.name}${product.is_wishlisted ? " from" : " to"} wishlist`}
+          aria-pressed={Boolean(product.is_wishlisted)}
+        >
+          <Icon
+            name="heart"
+            size={17}
+            fill={product.is_wishlisted ? "currentColor" : "none"}
+          />
+        </button>
+        {!inStock && (
+          <span className="absolute left-3 top-4 bg-white/90 px-2 py-1 text-[9px] uppercase tracking-wider text-gray-700">
+            Out of stock
+          </span>
+        )}
+        <button
+          onClick={addToBag}
+          disabled={cart.isPending || !inStock}
+          className="product-quick-add btn rounded-sm py-2.5 text-xs"
+        >
+          {cart.isPending
+            ? "Adding…"
+            : inStock
+              ? "Add to bag"
+              : "Currently unavailable"}
+          {inStock && <Icon name="plus" size={14} />}
+        </button>
       </div>
-      <ErrorModal
-        isOpen={isError}
-        onClose={reset}
-        message="You already have this item in your cart"
-      />
-      <ErrorModal
-        isOpen={wishlistError}
-        onClose={() => setWishlistError(false)}
-        message={wishlistError}
-        onConfirm={() => setWishlistError(false)}
-      />
-      <SuccessModal isOpen={isSuccess} onClose={reset} message="Item added" />
-    </>
+      <div className="flex flex-col items-start justify-between gap-1 pt-4 sm:flex-row sm:gap-3">
+        <div className="min-w-0">
+          <p className="eyebrow mb-1.5 text-[9px] tracking-[.15em]">
+            {product.category_name || "The collection"}
+          </p>
+          <h3 className="text-sm font-medium leading-6">
+            <Link
+              to={`/product/${product.product_id}`}
+              className="hover:underline underline-offset-4"
+            >
+              {product.name}
+            </Link>
+          </h3>
+        </div>
+        <p className="shrink-0 pt-1 text-sm tabular-nums sm:pt-5">
+          ${Number(product.price).toFixed(2)}
+        </p>
+      </div>
+      {notice && (
+        <p
+          role="status"
+          className="mt-2 text-xs text-indigo-700 dark:text-indigo-300"
+        >
+          {notice}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="mt-2 text-xs text-red-700 dark:text-red-300">
+          {error}
+        </p>
+      )}
+    </article>
   );
 }

@@ -1,0 +1,175 @@
+#root {
+  min-height: 100vh;
+}
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--page);
+  color: var(--ink);
+}
+.app-main {
+  flex: 1;
+  min-width: 0;
+}
+.site-header {
+  background: var(--page);
+  border-bottom: 1px solid var(--line);
+}
+.wordmark {
+  font-size: 26px;
+  font-weight: 650;
+  letter-spacing: -1.8px;
+  line-height: 1;
+}
+.wordmark-dot {
+  color: var(--accent);
+}
+.header-link {
+  padding: 10px 0;
+  font-size: 12px;
+  color: var(--muted);
+  transition: color 0.2s;
+}
+.header-link:hover,
+.header-link.active {
+  color: var(--ink);
+}
+.hero-art {
+  background: #e8e8dd;
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+.hero-art svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hero-art-label {
+  position: absolute;
+  left: 24px;
+  bottom: 22px;
+  color: #535c49;
+  font-size: 9px;
+  letter-spacing: 2px;
+}
+.catalog-tabs {
+  scrollbar-width: thin;
+}
+.catalog-tabs a {
+  white-space: nowrap;
+  padding: 12px 0;
+  border-bottom: 2px solid transparent;
+  font-size: 13px;
+  color: var(--muted);
+}
+.catalog-tabs a.active {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.product-tile {
+  position: relative;
+  aspect-ratio: 4/5;
+  overflow: hidden;
+  background: var(--soft);
+  border-radius: 4px;
+}
+.product-tile img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  transition: transform 0.6s;
+}
+.product-card:hover .product-tile img {
+  transform: scale(1.035);
+}
+.product-quick-add {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+}
+.product-card:hover .product-quick-add,
+.product-card:focus-within .product-quick-add {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (hover: none) {
+  .product-quick-add {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 640px) {
+  .product-quick-add {
+    opacity: 1;
+    transform: none;
+    padding: 9px;
+    font-size: 11px;
+    min-height: 36px;
+  }
+  .wordmark {
+    font-size: 23px;
+  }
+}
+.auth-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 680px;
+}
+.auth-story {
+  background: var(--soft);
+  padding: 64px;
+  position: relative;
+  overflow: hidden;
+}
+.auth-story::after {
+  content: "";
+  position: absolute;
+  width: 380px;
+  height: 380px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  right: -130px;
+  bottom: -80px;
+}
+.star-button {
+  color: var(--line);
+  transition:
+    color 0.15s,
+    transform 0.15s;
+}
+.star-button.selected {
+  color: var(--accent);
+}
+.star-button:hover {
+  transform: translateY(-2px);
+}
+.review-bar {
+  height: 4px;
+  background: var(--soft);
+  overflow: hidden;
+  border-radius: 2px;
+}
+.review-bar span {
+  height: 100%;
+  display: block;
+  background: var(--accent);
+}
+@media (max-width: 900px) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  .auth-story {
+    display: none;
+  }
+}

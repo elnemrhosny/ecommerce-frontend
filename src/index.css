@@ -1,19 +1,155 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-}
 
-button {
-  cursor: pointer;
+@layer base {
+  :root {
+    color-scheme: light;
+    --page: #faf9f6;
+    --surface: #fff;
+    --ink: #242a24;
+    --muted: #72766b;
+    --line: #e3e3d9;
+    --soft: #efefe8;
+    --accent: #566442;
+    --accent-soft: #e8ecdf;
+  }
+  .dark {
+    color-scheme: dark;
+    --page: #171b16;
+    --surface: #20261e;
+    --ink: #eff1e8;
+    --muted: #acb3a4;
+    --line: #374031;
+    --soft: #2a3225;
+    --accent: #bdcca2;
+    --accent-soft: #313e27;
+  }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 110px;
+  }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+  ::selection {
+    background: #dbe2ca;
+    color: #222a1d;
+  }
+  h1,
+  h2,
+  h3,
+  p {
+    overflow-wrap: break-word;
+  }
+}
+@layer components {
+  .site-width {
+    @apply mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-14;
+  }
+  .eyebrow {
+    @apply text-[10px] font-semibold uppercase tracking-[0.23em];
+    color: var(--muted);
+  }
+  .display-title {
+    @apply font-display font-normal tracking-[-0.045em];
+    line-height: 1.05;
+  }
+  .btn {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-5 py-3 text-sm font-medium transition-colors disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn;
+    background: var(--ink);
+    color: var(--page);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent);
+    color: var(--page);
+  }
+  .btn-secondary {
+    @apply btn border;
+    border-color: var(--line);
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--soft);
+  }
+  .text-link {
+    @apply inline-flex items-center gap-2 text-sm underline decoration-[1px] underline-offset-4;
+  }
+  .icon-button {
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors;
+  }
+  .icon-button:hover {
+    background: var(--soft);
+  }
+  .field {
+    @apply block min-h-12 w-full rounded-md border px-3.5 py-3 text-sm outline-none transition-colors;
+    background: var(--surface);
+    border-color: var(--line);
+    color: var(--ink);
+  }
+  .field:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+  }
+  .field::placeholder {
+    color: var(--muted);
+  }
+  .field-label {
+    @apply mb-2 block text-xs font-medium;
+  }
+  .muted {
+    color: var(--muted);
+  }
+  .surface {
+    background: var(--surface);
+  }
+  .soft-surface {
+    background: var(--soft);
+  }
+  .line-border {
+    border-color: var(--line);
+  }
+  .inline-error {
+    @apply rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200;
+  }
+  .empty-state {
+    @apply flex min-h-64 flex-col items-center justify-center gap-4 rounded-lg border border-dashed px-6 py-12 text-center;
+    border-color: var(--line);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

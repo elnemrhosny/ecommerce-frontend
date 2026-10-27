@@ -1,84 +1,98 @@
-// pages/OrdersPage.jsx
-import { useState } from 'react';
-import OrderCard from '../components/OrderCard';
-import Spinner from '../components/Spinner';
-import { useOrders } from '../hooks/useOrders';
-import { useAuth } from '../contexts/AuthContext';
-import ErrorModal from '../components/ErrorModal';
-import { useNavigate } from 'react-router-dom';
-
+import { useState } from "react";
+import { Link, Navigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { useOrders } from "../hooks/useOrders";
+import OrderCard from "../components/OrderCard";
+import Spinner from "../components/Spinner";
+import Icon from "../components/Icon";
 export default function OrdersPage() {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('active'); // 'active' or 'past'
-  const {data : orders = [] , isLoading , isError} = useOrders();
-  const {user} = useAuth();
-
-  const activeOrders = orders?.active || [];
-  const pastOrders = orders?.past || [];
-
-  
-if(!user) return <ErrorModal isOpen={true} message="Please login to view your orders" onClose={() =>navigate('/') }/>
+  const { user, isLoading: authLoading } = useAuth();
+  const [tab, setTab] = useState("active");
+  const { data, isLoading, isError, refetch } = useOrders(Boolean(user));
+  if (!authLoading && !user)
+    return <Navigate to="/login" state={{ from: "/orders" }} replace />;
+  const orders = data?.[tab] || [];
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">
-        My Orders
-      </h1>
-
-      {/* Tab Buttons */}
-      <div className="flex gap-3 mb-8">
-        <button
-          onClick={() => setActiveTab('active')}
-          className={`px-5 py-2.5 rounded-lg text-sm font-medium transition ${
-            activeTab === 'active'
-              ? 'bg-indigo-600 text-white shadow-sm'
-              : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700'
-          }`}
-        >
-          Active Orders
-        </button>
-        <button
-          onClick={() => setActiveTab('past')}
-          className={`px-5 py-2.5 rounded-lg text-sm font-medium transition ${
-            activeTab === 'past'
-              ? 'bg-indigo-600 text-white shadow-sm'
-              : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700'
-          }`}
-        >
-          Past Orders
-        </button>
+    <div className="site-width py-10 sm:py-14">
+      <p className="eyebrow mb-4">Good things on their way</p>
+      <h1 className="display-title text-5xl sm:text-6xl">Your orders.</h1>
+      <div
+        className="mt-8 flex gap-6 border-b line-border"
+        role="tablist"
+        aria-label="Order history"
+      >
+        {["active", "past"].map((value) => (
+          <button
+            key={value}
+            role="tab"
+            id={`orders-tab-${value}`}
+            aria-controls="order-list"
+            aria-selected={tab === value}
+            className={`border-b-2 py-4 text-sm ${tab === value ? "border-gray-900 dark:border-gray-100" : "border-transparent muted"}`}
+            tabIndex={tab === value ? 0 : -1}
+            onKeyDown={(event) => {
+              if (
+                ["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)
+              ) {
+                event.preventDefault();
+                const next =
+                  event.key === "Home"
+                    ? "active"
+                    : event.key === "End"
+                      ? "past"
+                      : tab === "active"
+                        ? "past"
+                        : "active";
+                setTab(next);
+                document.getElementById(`orders-tab-${next}`)?.focus();
+              }
+            }}
+            onClick={() => setTab(value)}
+          >
+            {value === "active" ? "Active orders" : "Past orders"}
+          </button>
+        ))}
       </div>
-
-      {isLoading ? (
-        <div className="flex justify-center py-20">
+      <div
+        id="order-list"
+        role="tabpanel"
+        aria-labelledby={`orders-tab-${tab}`}
+        className="mt-8"
+      >
+        {isLoading || authLoading ? (
           <Spinner />
-        </div>
-      ) : isError ? (
-        <div className="text-center py-20 text-red-500 dark:text-red-400">
-          Something went wrong.
-        </div>
-      ) : activeTab === 'active' ? (
-        activeOrders.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-            No active orders.
+        ) : isError ? (
+          <div className="empty-state">
+            <p>Your orders couldn’t load.</p>
+            <button className="btn-secondary" onClick={() => refetch()}>
+              Try again
+            </button>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {activeOrders.map((order) => (
+        ) : orders.length ? (
+          <div className="space-y-5">
+            {orders.map((order) => (
               <OrderCard key={order.order_id} order={order} />
             ))}
           </div>
-        )
-      ) : pastOrders.length === 0 ? (
-        <div className="text-center py-12 text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-          No past orders.
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {pastOrders.map((order) => (
-            <OrderCard key={order.order_id} order={order} />
-          ))}
-        </div>
-      )}
+        ) : (
+          <div className="empty-state">
+            <Icon name="bag" size={30} />
+            <h2 className="font-display text-3xl">
+              {tab === "active"
+                ? "Nothing on the way just yet."
+                : "Your story starts here."}
+            </h2>
+            <p className="muted text-sm">
+              {tab === "active"
+                ? "Your active orders will appear here."
+                : "Completed orders will be saved here for another look."}
+            </p>
+            <Link className="btn-primary" to="/">
+              Explore the collection
+            </Link>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

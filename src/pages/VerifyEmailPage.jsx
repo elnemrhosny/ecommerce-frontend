@@ -1,89 +1,66 @@
-// pages/VerifyEmailPage.jsx
-import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import Spinner from '../components/Spinner';
-import { useVerifyEmailToken } from '../hooks/useUser';
-
+import { useEffect, useRef } from "react";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { useVerifyEmailToken } from "../hooks/useUser";
+import { getApiError } from "../functions/apiErrors";
+import Icon from "../components/Icon";
+import Spinner from "../components/Spinner";
 export default function VerifyEmailPage() {
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
-  const {mutate : verifyToken , isPending : isLoading , isSuccess , isError} = useVerifyEmailToken();
-  const [message, setMessage] = useState('');
-  
-
- useEffect(()=>{
-    verifyToken({token});
- } , [])
-
+  const [params] = useSearchParams();
+  const token = params.get("token");
+  const { user, isLoading } = useAuth();
+  const { mutate, isPending, isSuccess, isError, error } =
+    useVerifyEmailToken();
+  const attempted = useRef(null);
+  useEffect(() => {
+    if (user && token && attempted.current !== token) {
+      attempted.current = token;
+      mutate({ token });
+    }
+  }, [user, token, mutate]);
+  if (isLoading) return <Spinner />;
+  if (!user && token)
+    return (
+      <Navigate
+        to="/login"
+        state={{ from: `/verify-email?token=${encodeURIComponent(token)}` }}
+        replace
+      />
+    );
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 py-16">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center">
-        {isLoading ? (
-          <Spinner />
-        ) : isSuccess? (
+    <div className="site-width py-16">
+      <section className="mx-auto max-w-xl rounded-lg border line-border surface p-8 text-center sm:p-12">
+        {isPending || Boolean(token && !isSuccess && !isError && user) ? (
           <>
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-10 w-10 text-green-600 dark:text-green-300"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-              Email Verified!
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-8">
-              Your email has been verified. You can now submit orders and access all features.
-            </p>
-            <Link
-              to="/"
-              className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
-            >
-              Continue Shopping
-            </Link>
+            <Spinner />
+            <p className="muted text-sm">Verifying your email…</p>
           </>
         ) : (
           <>
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-10 w-10 text-red-600 dark:text-red-300"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-              Verification Failed
+            <span className="mx-auto mb-7 flex h-14 w-14 items-center justify-center rounded-full soft-surface">
+              <Icon name={isSuccess ? "check" : "close"} size={25} />
+            </span>
+            <p className="eyebrow mb-4">Your ShopName account</p>
+            <h1 className="display-title text-4xl">
+              {isSuccess ? "You’re all set." : "Let’s try that again."}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-8">
-              Your token is invalid you can resend token from your user profile
+            <p className="muted my-6 text-sm leading-7">
+              {isSuccess
+                ? "Your email is verified. You can now place an order."
+                : token
+                  ? getApiError(
+                      error,
+                      "This verification link may have expired. Request a new one from your account.",
+                    )
+                  : "This link is missing a verification token. Request a new email from your account."}
             </p>
-            <Link
-              to="/profile"
-              className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
-            >
-              Go to Profile to Resend
+            <Link className="btn-primary" to={isSuccess ? "/" : "/profile"}>
+              {isSuccess ? "Explore the collection" : "Go to my account"}
+              <Icon name="arrow" size={16} />
             </Link>
           </>
         )}
-      </div>
+      </section>
     </div>
   );
 }

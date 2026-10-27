@@ -1,155 +1,138 @@
 import API from "../assets/axios";
-import { useMutation, useQuery , useQueryClient} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export function useUser(){
-    const result = useQuery({
-        queryKey : ['user'] , 
-        queryFn : () => API.get('/users/auth').then(res => res.data)
-    });
-    return result;
+function refreshAccountData(client) {
+  for (const key of ["cart", "wishlist", "wishlistcount", "orders", "products"])
+    client.invalidateQueries({ queryKey: [key] });
 }
-
-export function useLogin( ){
-    const queryClient = useQueryClient();
-    const result = useMutation({
-        mutationFn : (user) => API.post('/users/login' , user).then(res => res.data),
-        onSuccess : (data) =>{
-            queryClient.invalidateQueries({queryKey : ['cart']});
-            queryClient.invalidateQueries({queryKey : ['wishlist']});
-            queryClient.invalidateQueries({queryKey : ['wishlistcount']});
-            queryClient.invalidateQueries({queryKey : ['orders']});
-            queryClient.setQueryData(['user'] , data);
-        }
-    }); 
-    return result;
+export function useUser() {
+  return useQuery({
+    queryKey: ["user"],
+    queryFn: async () => {
+      try {
+        return (await API.get("/users/auth")).data;
+      } catch (error) {
+        if (error.response?.status === 401) return null;
+        throw error;
+      }
+    },
+    retry: 1,
+  });
 }
-
-export function useLoginGoogle( ){
-    const queryClient = useQueryClient();
-    const result = useMutation({
-        mutationFn : ({credential}) => API.post('/users/google' , {credential}).then(res => res.data),
-        onSuccess : (data) =>{
-            queryClient.invalidateQueries({queryKey : ['cart']});
-            queryClient.setQueryData(['user'] , data);
-        } , 
-        use_fedcm_for_promot : true , 
-        prompt : 'select_account'
-    });
-    return result;
+export function useLogin() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (values) => (await API.post("/users/login", values)).data,
+    onSuccess: (data) => {
+      client.setQueryData(["user"], data);
+      refreshAccountData(client);
+    },
+  });
 }
-
-export function useLogout(){
-    const queryClient = useQueryClient();
-    const result = useMutation({
-        mutationFn : () => API.post('/users/logout').then(res => res.data),
-        onSuccess : (data) => {
-            queryClient.invalidateQueries({queryKey : ['cart']})
-            queryClient.setQueryData(['user'] , null);
-        }
-    });
-    return result;
+export function useLoginGoogle() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (values) =>
+      (await API.post("/users/google", values)).data,
+    onSuccess: (data) => {
+      client.setQueryData(["user"], data);
+      refreshAccountData(client);
+    },
+  });
 }
-
-export function useChangeUsername(){
-    const queryClient = useQueryClient();
-    const result = useMutation({
-        mutationFn : (query) => API.patch('/users/username' , query).then(res => res.data),
-        onSuccess : (data) => {
-            queryClient.invalidateQueries(['user']);
-        }
-    });
-    return result;
+export function useLogout() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async () => (await API.post("/users/logout")).data,
+    onSuccess: () => {
+      client.setQueryData(["user"], null);
+      for (const key of ["orders", "wishlist", "wishlistcount"])
+        client.removeQueries({ queryKey: [key] });
+      refreshAccountData(client);
+    },
+  });
 }
-
-export function useCheckUsername(query){
-    const result = useQuery({
-        queryKey : ['checkusername' , query?.name] , 
-        queryFn : () => API.get(`/users/checkname/${query.name}`).then(res => res.data) , 
-        enabled : !!query?.name && query.name.length > 0
-    });
-    return result;
+export function useChangeUsername() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (values) =>
+      (await API.patch("/users/username", values)).data,
+    onSuccess: (data) => client.setQueryData(["user"], data),
+  });
 }
-
-export function useChangePassword(){
-    const queryClient = useQueryClient();
-    const result = useMutation({
-        mutationFn : (query) => API.patch('/users/password' , query).then(res => res.data),
-        onSuccess : (data) => {
-            queryClient.invalidateQueries({queryKey : ['user']})
-        }
-    });
-    return result;
+export function useCheckUsername(query) {
+  return useQuery({
+    queryKey: ["checkusername", query?.name],
+    enabled: Boolean(query?.name && query.name.trim().length >= 3),
+    queryFn: async () =>
+      (await API.get(`/users/checkname/${encodeURIComponent(query.name)}`))
+        .data,
+  });
 }
-
-export function useRegisterUser(){
-    const queryClient = useQueryClient();
-    const result = useMutation({
-        mutationFn : (query) => API.post('/users/register' , query).then(res => res.data),
-        onSuccess : (data) => {
-            queryClient.invalidateQueries({queryKey : ['user']})
-        }
-    });
-    return result;
+export function useChangePassword() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (values) =>
+      (await API.patch("/users/password", values)).data,
+    onSuccess: () => client.invalidateQueries({ queryKey: ["user"] }),
+  });
 }
-
-export function useAddWishlist(){
-    const queryClient = useQueryClient();
-    const result = useMutation({
-        mutationFn : (query) => API.post('/wishlists' , query).then(res => res.data),
-        onSuccess : (data) => {
-            queryClient.invalidateQueries({queryKey : ['products']}) , 
-            queryClient.invalidateQueries({queryKey : ['wishlist']}) ,
-            queryClient.invalidateQueries({queryKey : ['wishlistcount']})
-        }
-    });
-    return result;
+export function useRegisterUser() {
+  return useMutation({
+    mutationFn: async (values) =>
+      (await API.post("/users/register", values)).data,
+  });
 }
-
-export function useDeleteWishlist(){
-    const queryClient = useQueryClient();
-    const result = useMutation({
-        mutationFn : (query) => API.delete(`/wishlists/${query.product_id}`).then(res => res.data),
-        onSuccess : (data) => {
-            queryClient.invalidateQueries({queryKey : ['products']}) , 
-            queryClient.invalidateQueries({queryKey : ['wishlist']}),
-            queryClient.invalidateQueries({queryKey : ['wishlistcount']})
-        }
-    });
-    return result;
+export function useAddWishlist() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (values) => (await API.post("/wishlists", values)).data,
+    onSuccess: () => {
+      for (const key of ["products", "wishlist", "wishlistcount"])
+        client.invalidateQueries({ queryKey: [key] });
+    },
+  });
 }
-
-
-export function useWishlist(offset , limit){
-    const result = useQuery({
-        queryKey : ['wishlist' , offset] , 
-        queryFn : () => API.get(`/wishlists?offset=${offset}&limit=${limit}`).then(res => res.data)
-    });
-    return result;
+export function useDeleteWishlist() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (values) =>
+      (await API.delete(`/wishlists/${values.product_id}`)).data,
+    onSuccess: () => {
+      for (const key of ["products", "wishlist", "wishlistcount"])
+        client.invalidateQueries({ queryKey: [key] });
+    },
+  });
 }
-
-export function useWishlistCount(){
-    const result = useQuery({
-        queryKey : ['wishlistcount' , 'wishlist'] , 
-        queryFn : () => API.get(`/wishlists/count`).then(res => res.data)        
-    });
-    return result;
+export function useWishlist(offset, limit, enabled = true) {
+  return useQuery({
+    queryKey: ["wishlist", offset, limit],
+    enabled,
+    queryFn: async () =>
+      (await API.get("/wishlists", { params: { offset, limit } })).data,
+  });
 }
-
-export function useSendVerificationToken(){
-    const result = useMutation({
-        mutationFn : () => API.post(`/users/resend-token`).then(res => res.data)        
-    });
-    return result;
-};
-
-export function useVerifyEmailToken(){
-    const queryClient = useQueryClient();
-    const result = useMutation({
-        mutationFn : (query) => API.get(`/users/verify-email?token=${query?.token}`).then(res => res.data),
-        onSuccess : () =>{
-            queryClient.invalidateQueries({queryKey : ['user']});
-        }       
-    });
-    return result;
-};
-
+export function useWishlistCount(enabled = true) {
+  return useQuery({
+    queryKey: ["wishlistcount", "wishlist"],
+    enabled,
+    queryFn: async () => (await API.get("/wishlists/count")).data,
+  });
+}
+export function useSendVerificationToken() {
+  return useMutation({
+    mutationFn: async () => (await API.post("/users/resend-token")).data,
+  });
+}
+export function useVerifyEmailToken() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (values) =>
+      (
+        await API.get("/users/verify-email", {
+          params: { token: values?.token },
+        })
+      ).data,
+    onSuccess: () => client.invalidateQueries({ queryKey: ["user"] }),
+  });
+}

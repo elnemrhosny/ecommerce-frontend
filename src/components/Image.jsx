@@ -1,43 +1,31 @@
-// components/Image.jsx
-import { useState } from 'react';
-
+import { useState } from "react";
 export default function Image({
   src,
-  alt = '',
-  aspectRatio = '4/3',        // width / height ratio, e.g. '4/3', '1/1', '16/9'
-  objectFit = 'cover',         // 'cover', 'contain', 'fill', 'none', 'scale-down'
-  className = '',              // additional classes for the <img> tag
-  containerClassName = '',     // additional classes for the outer container
-  fallback = '/placeholder.png', // fallback image if src fails to load
+  alt = "",
+  aspectRatio = "4/3",
+  objectFit = "cover",
+  className = "",
+  containerClassName = "",
+  fallback = "/placeholder.png",
+  loading = "lazy",
 }) {
-  const [imgSrc, setImgSrc] = useState(src);
-  const [hasError, setHasError] = useState(false);
-
-  const handleError = () => {
-    if (!hasError) {
-      setImgSrc(fallback);
-      setHasError(true);
-    }
-  };
-
-  // Reset if src changes externally
-  if (src !== imgSrc && !hasError) {
-    setImgSrc(src);
-  }
-
+  const [failedSrc, setFailedSrc] = useState(null);
+  const imgSrc = src && failedSrc !== src ? src : fallback;
   return (
-  <div
-    className={`overflow-hidden bg-gray-100 dark:bg-gray-700 ${containerClassName}`}
-    style={{ aspectRatio }}
-  >
-    <img
-      src={imgSrc}
-      alt={alt}
-      onError={handleError}
-      className={`h-full w-full ${className}`}
-      style={{ objectFit }}
-      loading="lazy"
-    />
-  </div>
-);
+    <div
+      className={`overflow-hidden soft-surface ${containerClassName}`}
+      style={{ aspectRatio }}
+    >
+      <img
+        src={imgSrc}
+        alt={alt}
+        onError={() => {
+          if (imgSrc !== fallback) setFailedSrc(src);
+        }}
+        className={`h-full w-full ${className}`}
+        style={{ objectFit }}
+        loading={loading}
+      />
+    </div>
+  );
 }

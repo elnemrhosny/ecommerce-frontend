@@ -1,230 +1,263 @@
-// pages/ProductDetail.jsx
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import Image from '../components/Image';
-import Lightbox from '../components/Lightbox';
-import { getProductImages, getGalleryIndex } from '../functions/productImages';
-import Spinner from '../components/Spinner';
-import ErrorModal from '../components/ErrorModal';
-import SuccessModal from '../components/SuccessModal';
-import { useProducts } from '../hooks/useProducts';
-import { useAddCart } from '../hooks/useCart';
-import { useAuth } from '../contexts/AuthContext';
-import { useAddWishlist , useDeleteWishlist } from '../hooks/useUser';
-
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useProducts } from "../hooks/useProducts";
+import { useAddCart } from "../hooks/useCart";
+import { useAddWishlist, useDeleteWishlist } from "../hooks/useUser";
+import { useAuth } from "../contexts/AuthContext";
+import { getProductImages, getGalleryIndex } from "../functions/productImages";
+import { getApiError } from "../functions/apiErrors";
+import Image from "../components/Image";
+import Lightbox from "../components/Lightbox";
+import Icon from "../components/Icon";
+import ProductReviews from "../components/ProductReviews";
 export default function ProductPage() {
-  const {user} = useAuth();
-  const {id} = useParams();
-  const {data  = {}  , isLoading : isProductLoading , isError : isProductError}= useProducts(`product_id=${id}`);
-  const { mutate: addWishlist } = useAddWishlist();
-  const { mutate: deleteWishlist } = useDeleteWishlist();
-  const [wishlistError, setWishlistError] = useState(false);
-  const {mutate : handleCartAdd , isPending : isCartAddLoading, isSuccess : isCartAddSuccess , isError : isCartAddError , reset : cartAddReset} = useAddCart();
+  const { id } = useParams();
+  const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { data, isLoading, isError, refetch } = useProducts(`product_id=${id}`);
+  const cart = useAddCart();
+  const wishlistAdd = useAddWishlist();
+  const wishlistDelete = useDeleteWishlist();
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [index, setIndex] = useState(0);
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
   const product = data?.product;
-  
-
-  if (isProductLoading) {
+  const images = getProductImages(product, data?.images);
+  const current = getGalleryIndex(index, images.length);
+  useEffect(() => {
+    if (!isLoading && product && location.hash === "#reviews")
+      document.getElementById("reviews")?.scrollIntoView();
+  }, [isLoading, product, location.hash]);
+  if (isLoading)
     return (
-      <div className="flex justify-center py-20">
-        <Spinner />
-      </div>
-    );
-  }
-
-  if (isProductError || !product) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-20 text-center">
-        <p className="text-red-500">{isProductError ? 'Could not load this product. Please try again.' : 'Product not found'}</p>
-        <Link to="/" className="mt-4 inline-block text-indigo-600 hover:underline">
-          ← Back to products
-        </Link>
-      </div>
-    );
-  }
-
-  const handleToggleWishlist = (e) => {
-    e.preventDefault();
-    if (!user) setWishlistError("You have to be logged in the use the wishlist");
-    else if (product.is_wishlisted) deleteWishlist({ product_id: product.product_id });
-    else addWishlist({ product_id: product.product_id });
-  };
-  
-
-  const allImages = getProductImages(product, data.images);
-  const galleryIndex = getGalleryIndex(lightboxIndex, allImages.length);
-
-  const openLightbox = (index) => {
-    if (allImages.length === 0) return;
-    setLightboxIndex(getGalleryIndex(index, allImages.length));
-    setLightboxOpen(true);
-  };
-
-  const closeLightbox = () => setLightboxOpen(false);
-
-  const goToPrev = () => {
-    if (allImages.length === 0) return;
-    setLightboxIndex((prev) => (getGalleryIndex(prev, allImages.length) - 1 + allImages.length) % allImages.length);
-  };
-
-  const goToNext = () => {
-    if (allImages.length === 0) return;
-    setLightboxIndex((prev) => (getGalleryIndex(prev, allImages.length) + 1) % allImages.length);
-  };
-
-
-
-  return (
-  <div className="mx-auto max-w-5xl px-4 py-8">
-    {/* Back link */}
-    <Link
-      to="/"
-      className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:underline mb-6 dark:text-indigo-400"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-4 w-4"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
+      <div
+        className="site-width grid animate-pulse gap-10 py-12 lg:grid-cols-2"
+        role="status"
+        aria-label="Loading product"
       >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M15 19l-7-7 7-7"
-        />
-      </svg>
-      Back to Products
-    </Link>
-
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      {/* IMAGE GALLERY */}
-      <div className="space-y-4">
-        {/* Main image – clickable */}
-        <button
-          type="button"
-          className="block w-full aspect-[4/3] overflow-hidden rounded-xl bg-gray-100 cursor-pointer disabled:cursor-default dark:bg-gray-700"
-          disabled={allImages.length === 0}
-          aria-label={allImages.length ? `Enlarge image of ${product.name}` : 'No product image available'}
-          onClick={() => openLightbox(galleryIndex)}
-        >
-          <Image
-            key={allImages[galleryIndex]?.image_url || 'placeholder'}
-            src={allImages[galleryIndex]?.image_url || '/placeholder.png'}
-            alt={product.name}
-            aspectRatio="4/3"
-            objectFit="cover"
-            containerClassName="rounded-xl"
-            className='h-full w-full object-cover'
-          />
-        </button>
-
-        {/* Thumbnails */}
-        {allImages.length > 1 && (
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {allImages.map((img, idx) => (
-              <button
-                key={img.image_id}
-                onClick={() => {
-                  setLightboxIndex(idx);
-                }}
-                className={`h-20 w-20 shrink-0 rounded-lg overflow-hidden border-2 transition ${
-                  idx === galleryIndex
-                    ? 'border-indigo-600 dark:border-indigo-400'
-                    : 'border-gray-200 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500'
-                }`}
-              >
-                <Image
-                  src={img.image_url}
-                  alt=""
-                  aspectRatio="1/1"
-                  objectFit="cover"
-                />
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="soft-surface aspect-square rounded" />
+        <div className="soft-surface h-64 rounded" />
       </div>
-
-      {/* PRODUCT DETAILS */}
-      <div className="flex flex-col">
-        <div className="mb-2">
-          <span className="text-sm font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full dark:bg-indigo-900 dark:text-indigo-300">
-            {product.category_name}
-          </span>
+    );
+  if (isError || !product)
+    return (
+      <div className="site-width py-16">
+        <div className="empty-state">
+          <h1 className="display-title text-4xl">
+            {isError ? "This find couldn’t load." : "Product not found."}
+          </h1>
+          <p className="muted text-sm">
+            {isError
+              ? "Please check your connection and try again."
+              : "It may have moved or is no longer available."}
+          </p>
+          {isError ? (
+            <button className="btn-secondary" onClick={() => refetch()}>
+              Try again
+            </button>
+          ) : (
+            <Link className="btn-primary" to="/">
+              Explore the collection
+            </Link>
+          )}
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 dark:text-gray-100">
-          {product.name}
-        </h1>
-        <p className="text-gray-600 mb-6 dark:text-gray-400">
-          {product.description}
-        </p>
-
-        <div className="text-3xl font-bold text-indigo-600 mb-4 dark:text-indigo-400">
-          ${Number(product.price).toFixed(2)}
-        </div>
-
-        <div
-          className={`text-sm font-medium mb-6 ${
-            product.stock > 0
-              ? 'text-green-700 dark:text-green-400'
-              : 'text-red-700 dark:text-red-400'
-          }`}
-        >
-          {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
-        </div>
-
-        {/* Add to Cart / Wishlist */}
-        <div className="mt-auto flex gap-3">
+      </div>
+    );
+  const addToBag = async () => {
+    setError("");
+    setNotice("");
+    try {
+      await cart.mutateAsync({ product_id: id });
+      setNotice("Added to your bag.");
+    } catch (err) {
+      setError(getApiError(err, "Could not add this item."));
+    }
+  };
+  const toggleWishlist = async () => {
+    if (!user) {
+      navigate("/login", { state: { from: location.pathname } });
+      return;
+    }
+    setError("");
+    try {
+      await (product.is_wishlisted ? wishlistDelete : wishlistAdd).mutateAsync({
+        product_id: id,
+      });
+    } catch (err) {
+      setError(getApiError(err, "Could not update your wishlist."));
+    }
+  };
+  const available =
+    Number(product.stock) > 0 && Boolean(Number(product.is_active));
+  return (
+    <div className="site-width py-7 sm:py-10">
+      <nav
+        className="muted mb-8 flex items-center gap-3 text-[11px]"
+        aria-label="Breadcrumb"
+      >
+        <Link to="/">The collection</Link>
+        <span>/</span>
+        <Link to={`/?category_id=${product.category_id}`}>
+          {product.category_name}
+        </Link>
+        <span>/</span>
+        <span className="truncate max-w-40">{product.name}</span>
+      </nav>
+      <div className="grid items-start gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
+        <div>
           <button
-            disabled={isCartAddLoading || product.stock === 0}
-            className="flex-1 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer dark:bg-indigo-500 dark:hover:bg-indigo-600"
-            onClick={() => handleCartAdd({ product_id: product.product_id })}
+            type="button"
+            className="block w-full cursor-zoom-in overflow-hidden rounded-md disabled:cursor-default"
+            disabled={!images.length}
+            aria-label={
+              images.length
+                ? `Enlarge image of ${product.name}`
+                : "No product image available"
+            }
+            onClick={() => setLightboxOpen(true)}
           >
-            Add to Cart
+            <Image
+              key={images[current]?.image_url || "placeholder"}
+              src={images[current]?.image_url}
+              alt={product.name}
+              aspectRatio="1/1"
+              loading="eager"
+            />
           </button>
-          <button onClick={handleToggleWishlist} className="rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50  dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700">
+          {images.length > 1 && (
+            <div className="mt-4 flex gap-3 overflow-auto">
+              {images.map((image, i) => (
+                <button
+                  key={image.image_id || image.image_url}
+                  className={`w-20 shrink-0 overflow-hidden rounded border-2 ${i === current ? "border-indigo-600" : "border-transparent"}`}
+                  onClick={() => setIndex(i)}
+                  aria-label={`View image ${i + 1}`}
+                  aria-pressed={i === current}
+                >
+                  <Image src={image.image_url} alt="" aspectRatio="1/1" />
+                </button>
+              ))}
+            </div>
+          )}
+          <p className="muted mt-4 text-center text-[10px] tracking-wide">
+            {images.length
+              ? "A closer look. Select an image to enlarge."
+              : "Photography for this item is not available yet."}
+          </p>
+        </div>
+        <div className="lg:sticky lg:top-28">
+          <p className="eyebrow mb-4">{product.category_name}</p>
+          <h1 className="display-title text-[clamp(2.5rem,4vw,4.3rem)]">
+            {product.name}
+          </h1>
+          <p className="mt-6 text-2xl tabular-nums">
+            ${Number(product.price).toFixed(2)}
+          </p>
+          <a
+            href="#reviews"
+            className="muted mt-4 inline-flex items-center gap-2 text-xs underline underline-offset-4"
+          >
+            <Icon name="star" size={14} />
+            Read customer reviews
+          </a>
+          <p className="muted mb-7 mt-7 whitespace-pre-line text-sm leading-8">
+            {product.description ||
+              "A new addition to the collection. Explore the details and make it part of your everyday."}
+          </p>
+          <div className="mb-6 flex items-center gap-2 text-xs">
             <span
-                className={
-                  product.is_wishlisted ? "text-red-500 dark:text-red-400" : ""
-                }
-              >
-                {product.is_wishlisted ? "♥" : "♡"}
-              </span>
-          </button>
+              className={`h-1.5 w-1.5 rounded-full ${available ? "bg-indigo-600" : "bg-gray-400"}`}
+            />
+            {available
+              ? "In stock and ready to add to your bag"
+              : "Currently unavailable"}
+          </div>
+          <div className="flex gap-3">
+            <button
+              className="btn-primary flex-1"
+              disabled={!available || cart.isPending}
+              onClick={addToBag}
+            >
+              {cart.isPending
+                ? "Adding…"
+                : available
+                  ? "Add to bag"
+                  : "Out of stock"}
+              <Icon name="bag" size={17} />
+            </button>
+            <button
+              className="btn-secondary px-4"
+              aria-label={
+                product.is_wishlisted
+                  ? "Remove from wishlist"
+                  : "Save to wishlist"
+              }
+              aria-pressed={Boolean(product.is_wishlisted)}
+              disabled={wishlistAdd.isPending || wishlistDelete.isPending}
+              onClick={toggleWishlist}
+            >
+              <Icon
+                name="heart"
+                fill={product.is_wishlisted ? "currentColor" : "none"}
+              />
+            </button>
+          </div>
+          {notice && (
+            <p
+              role="status"
+              className="mt-4 rounded-md soft-surface px-4 py-3 text-sm"
+            >
+              {notice}{" "}
+              <Link className="underline underline-offset-4" to="/cart">
+                View bag
+              </Link>
+            </p>
+          )}
+          {error && (
+            <p role="alert" className="inline-error mt-4">
+              {error}
+            </p>
+          )}
+          <div className="mt-8 border-t line-border">
+            <details className="border-b line-border py-5" open>
+              <summary className="cursor-pointer text-xs font-medium">
+                Product details
+              </summary>
+              <dl className="muted mt-4 grid grid-cols-2 gap-3 text-xs">
+                <dt>Category</dt>
+                <dd>{product.category_name}</dd>
+                <dt>Availability</dt>
+                <dd>{available ? "In stock" : "Unavailable"}</dd>
+              </dl>
+            </details>
+            <details className="border-b line-border py-5">
+              <summary className="cursor-pointer text-xs font-medium">
+                A note from the community
+              </summary>
+              <p className="muted mt-4 text-xs leading-6">
+                Explore honest ratings and experiences below. Have something to
+                share? Sign in to leave your own review.
+              </p>
+            </details>
+          </div>
         </div>
       </div>
+      <ProductReviews key={id} productId={id} />
+      <Lightbox
+        isOpen={lightboxOpen && Boolean(images.length)}
+        images={images}
+        currentIndex={current}
+        onClose={() => setLightboxOpen(false)}
+        onPrev={() => {
+          if (images.length)
+            setIndex((current - 1 + images.length) % images.length);
+        }}
+        onNext={() => {
+          if (images.length) setIndex((current + 1) % images.length);
+        }}
+      />
     </div>
-
-    {/* Lightbox */}
-    <Lightbox
-      isOpen={lightboxOpen}
-      images={allImages}
-      currentIndex={galleryIndex}
-      onClose={closeLightbox}
-      onPrev={goToPrev}
-      onNext={goToNext}
-    />
-    <SuccessModal
-      isOpen={isCartAddSuccess}
-      onClose={cartAddReset}
-      message="Item added to cart"
-      onConfirm={cartAddReset}
-    />
-    <ErrorModal
-      isOpen={isCartAddError}
-      onClose={cartAddReset}
-      message="You already have this item in your cart"
-      onConfirm={cartAddReset}
-    />
-     <ErrorModal
-      isOpen={wishlistError}
-      onClose={() => setWishlistError(false)}
-      message={wishlistError}
-      onConfirm={() => setWishlistError(false)}
-    />
-  </div>
-);
+  );
 }

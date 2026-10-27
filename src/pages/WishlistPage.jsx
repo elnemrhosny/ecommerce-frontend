@@ -1,80 +1,86 @@
-// pages/WishlistPage.jsx
-import { useState } from 'react';
-import ProductCard from '../components/ProductCard';
-import Spinner from '../components/Spinner';
-import { useDeleteWishlist, useWishlist } from '../hooks/useUser';
-import { useAuth } from '../contexts/AuthContext';
-import ErrorModal from '../components/ErrorModal';
-import { useNavigate } from 'react-router-dom';
-
+import { useState } from "react";
+import { Link, Navigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { useWishlist } from "../hooks/useUser";
+import ProductCard from "../components/ProductCard";
+import Icon from "../components/Icon";
+import Spinner from "../components/Spinner";
 export default function WishlistPage() {
-  const [offset , setOffset] = useState(0);
-  const navigate = useNavigate();
-  const {user} = useAuth();
-  const {data : data , isLoading , isError} = useWishlist(offset , 12);
-  const {mutate : deleteWishlist} = useDeleteWishlist();
-  const [page, setPage] = useState(1);
+  const { user, isLoading: authLoading } = useAuth();
+  const [offset, setOffset] = useState(0);
+  const { data, isLoading, isError, refetch } = useWishlist(
+    offset,
+    12,
+    Boolean(user),
+  );
+  if (!authLoading && !user)
+    return <Navigate to="/login" state={{ from: "/wishlist" }} replace />;
   const products = data?.wishlist || [];
-  const count = data?.count || 0;
-  const totalPages = Math.ceil(count / 12);
-
-  const handlePrev = () => {
-    setOffset(offset - 12);
-    setPage((p) => Math.max(p - 1, 1));
-};
-  const handleNext = () =>{ 
-    setOffset(offset + 12);
-    setPage((p) => p + 1);
-};
-
-  const handleDeleteWishlist = (product_id) => deleteWishlist({ product_id});
-
-
-    if(!user) return <ErrorModal isOpen={true} message="Please login to view your wishlist" onClose={() =>navigate('/') }/>
-  
+  const count = Number(data?.count) || 0;
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">
-        My Wishlist
-      </h1>
-
-      {isLoading ? (
+    <div className="site-width py-10 sm:py-14">
+      <p className="eyebrow mb-4">Keep the good ones close</p>
+      <div className="mb-10 flex items-end justify-between gap-4">
+        <h1 className="display-title text-5xl sm:text-6xl">Your favourites.</h1>
+        <span className="muted text-xs">
+          {count} saved {count === 1 ? "find" : "finds"}
+        </span>
+      </div>
+      {isLoading || authLoading ? (
         <Spinner />
       ) : isError ? (
-        <div className="text-center py-16 text-red-500 dark:text-red-400">Something went wrong</div>
-      ) : products?.length === 0 ? (
-        <div className="text-center py-16 text-gray-500 dark:text-gray-400">
-          Your wishlist is empty.
+        <div className="empty-state">
+          <p>Your wishlist couldn’t load.</p>
+          <button className="btn-secondary" onClick={() => refetch()}>
+            Try again
+          </button>
         </div>
-      ) : (
+      ) : products.length ? (
         <>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-5 gap-y-10 sm:gap-x-7 lg:grid-cols-4">
             {products.map((product) => (
               <ProductCard key={product.product_id} product={product} />
             ))}
           </div>
-
-          {/* Pagination */}
-          <div className="mt-8 flex justify-center gap-4">
-            <button
-              onClick={handlePrev}
-              disabled={page === 1 || isLoading}
-              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+          {count > 12 && (
+            <nav
+              aria-label="Wishlist pages"
+              className="mt-10 flex items-center justify-between"
             >
-              ← Previous
-            </button>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Page {page} of {totalPages}
-            </span>
-            <button
-              onClick={handleNext}
-              disabled={page === totalPages || isLoading}
-              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-            >
-              Next →
-            </button>
-          </div>
+              <button
+                className="btn-secondary"
+                disabled={offset === 0}
+                onClick={() => setOffset(Math.max(0, offset - 12))}
+              >
+                Previous
+              </button>
+              <span className="muted text-xs">
+                {Math.floor(offset / 12) + 1} / {Math.ceil(count / 12)}
+              </span>
+              <button
+                className="btn-secondary"
+                disabled={offset + 12 >= count}
+                onClick={() => setOffset(offset + 12)}
+              >
+                Next
+              </button>
+            </nav>
+          )}
         </>
+      ) : (
+        <div className="empty-state">
+          <Icon name="heart" size={30} />
+          <h2 className="font-display text-3xl">
+            A space for your favourites.
+          </h2>
+          <p className="muted text-sm">
+            Tap the heart on an item to save it for another day.
+          </p>
+          <Link className="btn-primary" to="/">
+            Find something to love
+            <Icon name="arrow" size={16} />
+          </Link>
+        </div>
       )}
     </div>
   );

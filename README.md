@@ -1,18 +1,108 @@
-# React + Vite
+# ShopName — Ecommerce Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A responsive ecommerce storefront built with React and Vite, featuring a minimal ivory, charcoal, and olive design.
 
-Currently, two official plugins are available:
+**Live store:** [ecommerce-frontend-two-blush.vercel.app](https://ecommerce-frontend-two-blush.vercel.app/)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- Product catalog with category navigation, search, sorting, price and stock filters, and pagination.
+- Product details with image galleries, a lightbox, and missing-image fallbacks.
+- Dedicated login and signup pages, with Google sign-in when configured.
+- Shopping bag, quantity updates, wishlists, and checkout integration.
+- Product reviews with rating summaries and owner-only editing and deletion.
+- Account settings, email verification, and order history.
+- Protected administration pages for products, categories, and orders.
+- Responsive layouts, light/dark themes, and keyboard-accessible controls.
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## Tech stack
 
-Note: This will impact Vite dev & build performances.
+React 19 · Vite 8 · React Router · TanStack Query · Axios · Tailwind CSS · Google OAuth · Oxlint
 
-## Expanding the Oxlint configuration
+## Getting started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Use Node.js **22.12 or newer** and npm. The installed Vite version also supports Node.js 20.19 or newer within the Node 20 release line.
+
+Run these commands from the frontend repository:
+
+```bash
+npm ci
+```
+
+Create a `.env` file:
+
+```dotenv
+VITE_SERVER_URL=http://localhost:8000
+VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id
+```
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_SERVER_URL` | Backend API base URL. Use the deployed API URL for a production build. |
+| `VITE_GOOGLE_CLIENT_ID` | Optional Google OAuth client ID. Google sign-in is hidden when this is unset. |
+
+Vite exposes `VITE_` variables to the browser. Keep database passwords, JWT secrets, and other private credentials in the backend environment.
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Vite normally serves the app at `http://localhost:5173`. Start the backend separately and make sure its CORS configuration allows the frontend origin. For Google sign-in, authorize the relevant frontend origin in the Google OAuth configuration.
+
+## Commands
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the development server. |
+| `npm run build` | Create the production bundle in `dist/`. |
+| `npm run preview` | Preview the production bundle locally. |
+| `npm run lint` | Run Oxlint. |
+| `npm test` | Run frontend utility and image-gallery regression tests. |
+
+## Main routes
+
+| Route | Page |
+| --- | --- |
+| `/` | Product collection |
+| `/product/:id` | Product details and reviews |
+| `/login` | Login |
+| `/signup` | Signup; `/register` is also supported |
+| `/cart` | Shopping bag and checkout |
+| `/wishlist` | Saved products |
+| `/profile` | Account settings |
+| `/orders` | Active and past orders |
+| `/order-status` | Payment/order status |
+| `/verify-email` | Email verification |
+| `/admin/products` | Product management |
+| `/admin/categories` | Category management |
+| `/admin/orders` | Order management |
+
+## Project structure
+
+```text
+src/
+├── components/       Shared UI, navigation, product cards, reviews, and admin forms
+├── contexts/         Authentication and theme state
+├── functions/        Validation, API error handling, and image helpers
+├── hooks/            API queries and mutations
+├── pages/            Storefront, account, authentication, and admin pages
+├── assets/axios.js   Shared API client
+├── App.jsx           Providers and routes
+└── index.css         Design tokens and shared styles
+public/               Static assets and illustrations
+tests/                Automated regression tests
+```
+
+## Deployment
+
+The storefront is hosted on Vercel. Configure `VITE_SERVER_URL` and, if used, `VITE_GOOGLE_CLIENT_ID` for the target deployment. The build command is `npm run build`, and the output directory is `dist`.
+
+`vercel.json` rewrites application paths to `index.html` so direct links to React Router pages work. The backend's `CLIENT_URL` must match the deployed frontend origin:
+
+```text
+https://ecommerce-frontend-two-blush.vercel.app
+```
+
+Deploy the corresponding backend review changes alongside the redesigned frontend. See [REDESIGN.md](./REDESIGN.md) for implementation details, verification scope, and the deferred catalog replacement work.
